@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
@@ -34,6 +34,8 @@ const directionOptions = [
 ]
 
 const importFileRef = ref<HTMLInputElement | null>(null)
+const tableWrapperRef = ref<HTMLDivElement | null>(null)
+const truncatedRemarks = ref<Set<string>>(new Set())
 
 function formatInputType(record: ConversionRecord): string {
   return record.inputType === 'modern' ? '现代 → 古' : '古 → 现代'
@@ -140,6 +142,32 @@ function handleClearFilters(): void {
 const hasActiveFilters = computed(
   () => filterEditionId.value !== '' || filterInputType.value !== '',
 )
+
+function updateTruncatedRemarks(): void {
+  if (!tableWrapperRef.value) return
+  const cells = tableWrapperRef.value.querySelectorAll<HTMLElement>('.remark-cell')
+  const truncated = new Set<string>()
+  cells.forEach((cell) => {
+    const id = cell.dataset.id
+    if (id && cell.scrollWidth > cell.clientWidth) {
+      truncated.add(id)
+    }
+  })
+  truncatedRemarks.value = truncated
+}
+
+watch(
+  records,
+  async () => {
+    await nextTick()
+    updateTruncatedRemarks()
+  },
+  { deep: true, immediate: true },
+)
+
+function isRemarkTruncated(id: string): boolean {
+  return truncatedRemarks.value.has(id)
+}
 </script>
 
 <template>
@@ -231,43 +259,55 @@ const hasActiveFilters = computed(
 
     <div class="literary-card">
       <template v-if="records.length > 0">
-        <el-table :data="records" stripe style="width: 100%">
-          <el-table-column label="时间" width="140">
-            <template #default="{ row }">
-              <span :title="row.createdAt">{{ formatRelativeTime(row.createdAt) }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="editionName" label="版本" min-width="120" />
-          <el-table-column prop="volumeName" label="卷册" min-width="140" />
-          <el-table-column label="方向" width="100">
-            <template #default="{ row }">
-              <el-tag size="small" type="info">{{ formatInputType(row) }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="对照结果" min-width="200">
-            <template #default="{ row }">
-              {{ formatConversion(row) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="备注" min-width="120">
-            <template #default="{ row }">
-              <span v-if="row.remark" :title="row.remark" class="remark-cell">
-                {{ row.remark }}
-              </span>
-              <span v-else class="remark-placeholder">—</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="130" fixed="right">
-            <template #default="{ row }">
-              <el-button type="primary" link size="small" @click="handleReconvert(row)">
-                再次换算
-              </el-button>
-              <el-button type="danger" link size="small" @click="handleDelete(row)">
-                删除
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="table-wrapper" ref="tableWrapperRef">
+          <el-table :data="records" stripe style="width: 100%">
+            <el-table-column label="时间" width="140">
+              <template #default="{ row }">
+                <el-tooltip :content="row.createdAt" placement="top">
+                  <span>{{ formatRelativeTime(row.createdAt) }}</span>
+                </el-tooltip>
+              </template>
+            </el-table-column>
+            <el-table-column prop="editionName" label="版本" min-width="120" />
+            <el-table-column prop="volumeName" label="卷册" min-width="140" />
+            <el-table-column label="方向" width="100">
+              <template #default="{ row }">
+                <el-tag size="small" type="info">{{ formatInputType(row) }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="对照结果" min-width="200">
+              <template #default="{ row }">
+                {{ formatConversion(row) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="备注" min-width="120">
+              <template #default="{ row }">
+                <template v-if="row.remark">
+                  <el-tooltip
+                    :content="row.remark"
+                    placement="top"
+                    :disabled="!isRemarkTruncated(row.id)"
+                  >
+                    <span :data-id="row.id" class="remark-cell">
+                      {{ row.remark }}
+                    </span>
+                  </el-tooltip>
+                </template>
+                <span v-else class="remark-placeholder">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="130" fixed="right">
+              <template #default="{ row }">
+                <el-button type="primary" link size="small" @click="handleReconvert(row)">
+                  再次换算
+                </el-button>
+                <el-button type="danger" link size="small" @click="handleDelete(row)">
+                  删除
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
       </template>
 
       <div v-else-if="hasActiveFilters && totalRecords > 0" class="empty-hint">
@@ -308,6 +348,11 @@ const hasActiveFilters = computed(
 .filter-card {
   padding: 16px 24px;
   margin-bottom: 16px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .remark-cell {
