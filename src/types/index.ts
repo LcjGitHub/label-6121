@@ -48,6 +48,20 @@ export interface ConversionResult {
   message?: string
 }
 
+/** 批量换算单条结果 */
+export interface BatchConversionItem {
+  modernPage: number
+  ancientPage: string
+  found: boolean
+}
+
+/** 批量换算结果 */
+export interface BatchConversionResult {
+  items: BatchConversionItem[]
+  total: number
+  foundCount: number
+}
+
 /** 备份文件元信息 */
 export interface BackupMeta {
   version: string

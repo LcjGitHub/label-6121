@@ -5,17 +5,26 @@ import { ElMessage } from 'element-plus'
 import { Star, StarFilled } from '@element-plus/icons-vue'
 import { useToggle } from '@vueuse/core'
 import { useEditionStore } from '@/stores/edition'
-import { convertPage, validatePageInput } from '@/utils/converter'
-import type { PageInputType } from '@/types'
+import { convertPage, convertPageRange, validatePageInput, validatePageRange } from '@/utils/converter'
+import type { BatchConversionResult, PageInputType } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const editionStore = useEditionStore()
 
+type ConvertMode = 'single' | 'range'
+
+const convertMode = ref<ConvertMode>('single')
 const inputType = ref<PageInputType>('modern')
 const inputValue = ref('')
 const outputValue = ref('')
 const errorMessage = ref('')
+
+const startPage = ref('')
+const endPage = ref('')
+const batchResult = ref<BatchConversionResult | null>(null)
+const batchCurrentPage = ref(1)
+const batchPageSize = ref(10)
 
 const [saving, toggleSaving] = useToggle(false)
 
@@ -24,6 +33,19 @@ let isUpdatingQuery = false
 function resetResult(): void {
   outputValue.value = ''
   errorMessage.value = ''
+}
+
+function resetBatchResult(): void {
+  batchResult.value = null
+  errorMessage.value = ''
+}
+
+function handleModeChange(): void {
+  inputValue.value = ''
+  startPage.value = ''
+  endPage.value = ''
+  resetResult()
+  resetBatchResult()
 }
 
 function sanitizeRouteQuery(editionId: string | undefined, volumeId: string | undefined): {
@@ -71,6 +93,7 @@ function applyRouteQuery(): void {
       editionStore.syncVolumeOnEditionChange()
     }
     resetResult()
+    resetBatchResult()
   } else {
     editionStore.initSelection()
   }
@@ -151,13 +174,32 @@ const outputLabel = computed(() =>
 
 const hasResult = computed(() => Boolean(outputValue.value))
 
+const hasBatchResult = computed(() => batchResult.value !== null)
+
+const paginatedBatchItems = computed(() => {
+  if (!batchResult.value) return []
+  const items = batchResult.value.items
+  const start = (batchCurrentPage.value - 1) * batchPageSize.value
+  const end = start + batchPageSize.value
+  return items.slice(start, end)
+})
+
+const batchTotal = computed(() => batchResult.value?.total ?? 0)
+
 watch(editionId, () => {
   editionStore.syncVolumeOnEditionChange()
   resetResult()
+  resetBatchResult()
 })
 
 watch([inputType, volumeId], () => {
   resetResult()
+  resetBatchResult()
+})
+
+watch(convertMode, () => {
+  resetResult()
+  resetBatchResult()
 })
 
 /**
@@ -235,11 +277,51 @@ async function handleSave(): Promise<void> {
 }
 
 /**
+ * 执行页码区间批量换算
+ */
+function handleBatchConvert(): void {
+  if (!editionId.value || !volumeId.value) {
+    ElMessage.warning('请先选择版本与卷册')
+    return
+  }
+
+  const validationError = validatePageRange(startPage.value, endPage.value)
+  if (validationError) {
+    errorMessage.value = validationError
+    batchResult.value = null
+    ElMessage.error(validationError)
+    return
+  }
+
+  const volume = selectedVolume.value
+  if (!volume) {
+    ElMessage.error('卷册数据不存在')
+    return
+  }
+
+  const startNum = Number(startPage.value.trim())
+  const endNum = Number(endPage.value.trim())
+  const result = convertPageRange(volume.mappings, startNum, endNum)
+
+  batchResult.value = result
+  errorMessage.value = ''
+  batchCurrentPage.value = 1
+  ElMessage.success(`批量换算完成，共 ${result.foundCount}/${result.total} 条匹配`)
+}
+
+/**
  * 重置表单
  */
 function handleReset(): void {
   inputValue.value = ''
+  startPage.value = ''
+  endPage.value = ''
   resetResult()
+  resetBatchResult()
+}
+
+function handleBatchCurrentChange(page: number): void {
+  batchCurrentPage.value = page
 }
 </script>
 
@@ -322,38 +404,131 @@ function handleReset(): void {
           {{ selectedEdition.description }}
         </p>
 
-        <el-form-item label="换算方向">
-          <el-radio-group v-model="inputType" @change="handleInputTypeChange">
-            <el-radio value="modern">现代页码 → 古页码</el-radio>
-            <el-radio value="ancient">古页码 → 现代页码</el-radio>
+        <el-form-item label="换算模式">
+          <el-radio-group v-model="convertMode" @change="handleModeChange">
+            <el-radio value="single">单条换算</el-radio>
+            <el-radio value="range">区间批量换算</el-radio>
           </el-radio-group>
         </el-form-item>
 
-        <el-form-item :label="inputType === 'modern' ? '现代页码' : '古页码'">
-          <el-input
-            v-model="inputValue"
-            :placeholder="inputPlaceholder"
-            clearable
-            @keyup.enter="handleConvert"
-          />
-        </el-form-item>
+        <template v-if="convertMode === 'single'">
+          <el-form-item label="换算方向">
+            <el-radio-group v-model="inputType" @change="handleInputTypeChange">
+              <el-radio value="modern">现代页码 → 古页码</el-radio>
+              <el-radio value="ancient">古页码 → 现代页码</el-radio>
+            </el-radio-group>
+          </el-form-item>
 
-        <div class="form-actions">
-          <el-button type="primary" @click="handleConvert">换算</el-button>
-          <el-button :disabled="!hasResult" :loading="saving" @click="handleSave">
-            保存记录
-          </el-button>
-          <el-button @click="handleReset">清空</el-button>
-        </div>
+          <el-form-item :label="inputType === 'modern' ? '现代页码' : '古页码'">
+            <el-input
+              v-model="inputValue"
+              :placeholder="inputPlaceholder"
+              clearable
+              @keyup.enter="handleConvert"
+            />
+          </el-form-item>
+
+          <div class="form-actions">
+            <el-button type="primary" @click="handleConvert">换算</el-button>
+            <el-button :disabled="!hasResult" :loading="saving" @click="handleSave">
+              保存记录
+            </el-button>
+            <el-button @click="handleReset">清空</el-button>
+          </div>
+        </template>
+
+        <template v-else>
+          <el-row :gutter="20">
+            <el-col :xs="24" :sm="12">
+              <el-form-item label="起始现代页码">
+                <el-input
+              v-model="startPage"
+              placeholder="请输入起始现代页码（正整数）"
+              clearable
+              type="number"
+            />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12">
+              <el-form-item label="结束现代页码">
+                <el-input
+              v-model="endPage"
+              placeholder="请输入结束现代页码（正整数）"
+              clearable
+              type="number"
+            />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <div class="form-actions">
+            <el-button type="primary" @click="handleBatchConvert">批量换算</el-button>
+            <el-button @click="handleReset">清空</el-button>
+          </div>
+        </template>
       </el-form>
 
-      <div v-if="hasResult" class="result-box">
+      <div v-if="convertMode === 'single' && hasResult" class="result-box">
         <div class="result-label">{{ outputLabel }}</div>
         <div class="result-value">{{ outputValue }}</div>
       </div>
 
+      <div v-if="convertMode === 'range' && hasBatchResult" class="batch-result-box">
+        <div class="result-summary">
+          批量换算结果：共 {{ batchResult?.foundCount }}/{{ batchResult?.total }} 条匹配
+        </div>
+        <el-table :data="paginatedBatchItems" stripe style="width: 100%" size="small">
+          <el-table-column
+            type="index"
+            label="序号"
+            width="80"
+            align="center"
+            :index="(index: number) => (batchCurrentPage - 1) * batchPageSize + index + 1"
+          />
+          <el-table-column
+            prop="modernPage"
+            label="现代页码"
+            width="120"
+            align="center"
+          />
+          <el-table-column
+            prop="ancientPage"
+            label="古页码"
+            align="center"
+          >
+            <template #default="{ row }">
+              <span v-if="row.found">{{ row.ancientPage }}</span>
+              <span v-else class="not-found">未匹配</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="状态"
+            width="100"
+            align="center"
+          >
+            <template #default="{ row }">
+              <el-tag :type="row.found ? 'success' : 'info'" size="small">
+                {{ row.found ? '已匹配' : '未匹配' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div class="pagination-wrapper">
+          <el-pagination
+            v-model:current-page="batchCurrentPage"
+            :page-size="batchPageSize"
+            :total="batchTotal"
+            layout="prev, pager, next, total"
+            :page-sizes="[batchPageSize]"
+            background
+            @current-change="handleBatchCurrentChange"
+          />
+        </div>
+      </div>
+
       <el-alert
-        v-else-if="errorMessage"
+        v-if="errorMessage"
         :title="errorMessage"
         type="warning"
         show-icon
@@ -451,5 +626,42 @@ function handleReset(): void {
 
 .hint-link:hover {
   text-decoration: underline;
+}
+
+.batch-result-box {
+  margin-top: 20px;
+}
+
+.result-summary {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: #f0ebe0;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: var(--ink-secondary);
+  font-weight: 500;
+}
+
+.not-found {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.pagination-wrapper :deep(.el-pagination.is-background .el-pager li:not(.is-active).is-hover) {
+  color: var(--accent);
+}
+
+.pagination-wrapper :deep(.el-pagination.is-background .el-pager li.is-active) {
+  background-color: var(--accent);
+}
+
+.pagination-wrapper :deep(.el-pagination button:hover:not(:disabled)) {
+  color: var(--accent);
 }
 </style>

@@ -1,4 +1,10 @@
-import type { ConversionResult, PageInputType, PageMapping } from '@/types'
+import type {
+  BatchConversionItem,
+  BatchConversionResult,
+  ConversionResult,
+  PageInputType,
+  PageMapping,
+} from '@/types'
 
 /**
  * 校验现代页码是否为正整数
@@ -97,4 +103,54 @@ export function convertPage(
     return { success: false, message: error }
   }
   return convertAncientToModern(mappings, inputValue)
+}
+
+export function validatePageRange(start: string, end: string): string | null {
+  const startError = validateModernPage(start)
+  if (startError) {
+    return `起始页${startError}`
+  }
+  const endError = validateModernPage(end)
+  if (endError) {
+    return `结束页${endError}`
+  }
+  const startNum = Number(start.trim())
+  const endNum = Number(end.trim())
+  if (startNum > endNum) {
+    return '起始页不得大于结束页'
+  }
+  return null
+}
+
+export function convertPageRange(
+  mappings: PageMapping[],
+  startModernPage: number,
+  endModernPage: number,
+): BatchConversionResult {
+  const items: BatchConversionItem[] = []
+  let foundCount = 0
+
+  for (let modern = startModernPage; modern <= endModernPage; modern++) {
+    const found = mappings.find((m) => m.modernPage === modern)
+    if (found) {
+      foundCount++
+      items.push({
+        modernPage: modern,
+        ancientPage: found.ancientPage,
+        found: true,
+      })
+    } else {
+      items.push({
+        modernPage: modern,
+        ancientPage: '',
+        found: false,
+      })
+    }
+  }
+
+  return {
+    items,
+    total: items.length,
+    foundCount,
+  }
 }
