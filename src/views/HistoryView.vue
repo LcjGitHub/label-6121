@@ -14,23 +14,27 @@ const totalRecords = computed(() => editionStore.sortedRecords.length)
 
 const filterEditionId = computed({
   get: () => editionStore.filterEditionId,
-  set: (val: string) => { editionStore.filterEditionId = val },
+  set: (val: string) => {
+    editionStore.filterEditionId = val
+  }
 })
 const filterInputType = computed({
   get: () => editionStore.filterInputType,
-  set: (val: PageInputType | '') => { editionStore.filterInputType = val },
+  set: (val: PageInputType | '') => {
+    editionStore.filterInputType = val
+  }
 })
 
 const editionOptions = computed(() =>
   editionStore.getSortedEditionsWithFavorite().map((e) => ({
     label: e.name,
-    value: e.id,
-  })),
+    value: e.id
+  }))
 )
 
 const directionOptions = [
   { label: '现代 → 古', value: 'modern' as PageInputType },
-  { label: '古 → 现代', value: 'ancient' as PageInputType },
+  { label: '古 → 现代', value: 'ancient' as PageInputType }
 ]
 
 const importFileRef = ref<HTMLInputElement | null>(null)
@@ -52,7 +56,7 @@ async function handleDelete(record: ConversionRecord): Promise<void> {
     await ElMessageBox.confirm('确定删除这条对照记录吗？', '删除确认', {
       confirmButtonText: '删除',
       cancelButtonText: '取消',
-      type: 'warning',
+      type: 'warning'
     })
     editionStore.removeRecord(record.id)
     ElMessage.success('已删除')
@@ -66,14 +70,14 @@ function handleReconvert(record: ConversionRecord): void {
     editionId: record.editionId,
     volumeId: record.volumeId,
     inputType: record.inputType,
-    inputValue: record.inputValue,
+    inputValue: record.inputValue
   })
   router.push({
     path: '/',
     query: {
       edition: record.editionId,
-      volume: record.volumeId,
-    },
+      volume: record.volumeId
+    }
   })
 }
 
@@ -84,7 +88,7 @@ async function handleClearAll(): Promise<void> {
     await ElMessageBox.confirm('确定清空全部对照记录吗？此操作不可恢复。', '清空确认', {
       confirmButtonText: '清空',
       cancelButtonText: '取消',
-      type: 'warning',
+      type: 'warning'
     })
     editionStore.clearRecords()
     ElMessage.success('已清空全部记录')
@@ -116,7 +120,7 @@ async function handleImportFile(event: Event): Promise<void> {
     const text = await file.text()
     const result = editionStore.importRecords(text)
     ElMessage.success(
-      `导入完成：新增 ${result.added} 条，更新 ${result.updated} 条，共 ${result.total} 条`,
+      `导入完成：新增 ${result.added} 条，更新 ${result.updated} 条，共 ${result.total} 条`
     )
   } catch (err) {
     ElMessage.error(err instanceof Error ? err.message : '导入失败，文件格式不正确')
@@ -140,7 +144,7 @@ function handleClearFilters(): void {
 }
 
 const hasActiveFilters = computed(
-  () => filterEditionId.value !== '' || filterInputType.value !== '',
+  () => filterEditionId.value !== '' || filterInputType.value !== ''
 )
 
 function updateTruncatedRemarks(): void {
@@ -162,7 +166,7 @@ watch(
     await nextTick()
     updateTruncatedRemarks()
   },
-  { deep: true, immediate: true },
+  { deep: true, immediate: true }
 )
 
 function isRemarkTruncated(id: string): boolean {
@@ -207,12 +211,7 @@ function isRemarkTruncated(id: string): boolean {
           </el-select>
         </el-col>
         <el-col :xs="24" :sm="8">
-          <el-button
-            type="primary"
-            plain
-            :disabled="!hasActiveFilters"
-            @click="handleClearFilters"
-          >
+          <el-button type="primary" plain :disabled="!hasActiveFilters" @click="handleClearFilters">
             清空筛选
           </el-button>
         </el-col>
@@ -227,24 +226,13 @@ function isRemarkTruncated(id: string): boolean {
           <template v-if="hasActiveFilters">
             当前筛选结果 {{ records.length }} 条，共 {{ totalRecords }} 条
           </template>
-          <template v-else>
-            共 {{ totalRecords }} 条
-          </template>
+          <template v-else> 共 {{ totalRecords }} 条 </template>
         </p>
       </div>
       <div class="header-actions">
-        <el-button type="primary" plain @click="handleExport">
-          导出备份
-        </el-button>
-        <el-button type="success" plain @click="triggerImportFile">
-          从文件导入
-        </el-button>
-        <el-button
-          v-if="totalRecords > 0"
-          type="danger"
-          plain
-          @click="handleClearAll"
-        >
+        <el-button type="primary" plain @click="handleExport"> 导出备份 </el-button>
+        <el-button type="success" plain @click="triggerImportFile"> 从文件导入 </el-button>
+        <el-button v-if="totalRecords > 0" type="danger" plain @click="handleClearAll">
           清空全部
         </el-button>
         <input
@@ -259,7 +247,7 @@ function isRemarkTruncated(id: string): boolean {
 
     <div class="literary-card">
       <template v-if="records.length > 0">
-        <div class="table-wrapper" ref="tableWrapperRef">
+        <div ref="tableWrapperRef" class="table-wrapper">
           <el-table :data="records" stripe style="width: 100%">
             <el-table-column label="时间" width="140">
               <template #default="{ row }">

@@ -20,7 +20,7 @@ const props = withDefaults(defineProps<Props>(), {
   showSearchOnExpand: true,
   title: '本卷页码映射示例',
   showIndex: false,
-  size: 'small',
+  size: 'small'
 })
 
 const isExpanded = ref(false)
@@ -55,7 +55,7 @@ watch(
   () => props.mappings,
   () => {
     searchKeyword.value = ''
-  },
+  }
 )
 </script>
 
@@ -67,9 +67,7 @@ watch(
         <span v-if="isExpanded && searchKeyword" class="filter-info">
           筛选结果：{{ filteredCount }}/{{ totalCount }} 条
         </span>
-        <span v-else class="filter-info">
-          共 {{ totalCount }} 条映射
-        </span>
+        <span v-else class="filter-info"> 共 {{ totalCount }} 条映射 </span>
         <el-button
           v-if="showExpandToggle && hasMore"
           :icon="isExpanded ? ArrowUp : ArrowDown"
@@ -103,20 +101,14 @@ watch(
         width="80"
         align="center"
       />
-      <el-table-column
-        prop="modernPage"
-        label="现代页码"
-        width="120"
-        align="center"
-      />
-      <el-table-column
-        prop="ancientPage"
-        label="古页码"
-        align="center"
-      />
+      <el-table-column prop="modernPage" label="现代页码" width="120" align="center" />
+      <el-table-column prop="ancientPage" label="古页码" align="center" />
     </el-table>
 
-    <div v-if="isExpanded && showSearchOnExpand && searchKeyword && filteredCount === 0" class="empty-tip">
+    <div
+      v-if="isExpanded && showSearchOnExpand && searchKeyword && filteredCount === 0"
+      class="empty-tip"
+    >
       未找到匹配的映射记录，请尝试其他关键字
     </div>
   </div>

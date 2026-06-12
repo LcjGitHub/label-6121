@@ -4,7 +4,7 @@ import type {
   ConversionResult,
   NearbySuggestion,
   PageInputType,
-  PageMapping,
+  PageMapping
 } from '@/types'
 import { normalizePageInput } from '@/utils/pageNormalize'
 
@@ -50,10 +50,23 @@ export function validatePageInput(type: PageInputType, value: string): string | 
 
 /** 中文数字字符到数值的映射 */
 const CHINESE_DIGIT_MAP: Record<string, number> = {
-  '零': 0, '〇': 0, '○': 0,
-  '一': 1, '二': 2, '两': 2, '三': 3, '四': 4,
-  '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
-  '十': 10, '百': 100, '千': 1000, '万': 10000,
+  零: 0,
+  〇: 0,
+  '○': 0,
+  一: 1,
+  二: 2,
+  两: 2,
+  三: 3,
+  四: 4,
+  五: 5,
+  六: 6,
+  七: 7,
+  八: 8,
+  九: 9,
+  十: 10,
+  百: 100,
+  千: 1000,
+  万: 10000
 }
 
 /** 天干地支等常见古籍序号字符 */
@@ -96,7 +109,6 @@ function parseAncientPageKey(page: string): Array<number | string> {
     // 中文字段
     const chineseNum = parseChineseChar(ch)
     if (chineseNum !== null) {
-      let total = 0
       let current = 0
       let section = 0
       let j = i
@@ -112,7 +124,7 @@ function parseAncientPageKey(page: string): Array<number | string> {
         }
         j++
       }
-      total = section + current
+      const total = section + current
       if (total > 0) {
         result.push(total)
         i = j
@@ -167,7 +179,7 @@ function compareAncientPages(a: string, b: string): number {
 export function findNearbySuggestions(
   mappings: PageMapping[],
   inputType: PageInputType,
-  inputValue: string,
+  inputValue: string
 ): NearbySuggestion[] {
   if (mappings.length === 0) return []
 
@@ -181,7 +193,7 @@ export function findNearbySuggestions(
     })
     return sorted.slice(0, 3).map((m) => ({
       modernPage: m.modernPage,
-      ancientPage: m.ancientPage,
+      ancientPage: m.ancientPage
     }))
   }
 
@@ -194,7 +206,7 @@ export function findNearbySuggestions(
   const adjustedStart = Math.max(0, end - 3)
   return mappings.slice(adjustedStart, end).map((m) => ({
     modernPage: m.modernPage,
-    ancientPage: m.ancientPage,
+    ancientPage: m.ancientPage
   }))
 }
 
@@ -205,7 +217,7 @@ export function findNearbySuggestions(
  */
 export function convertModernToAncient(
   mappings: PageMapping[],
-  modernPage: number,
+  modernPage: number
 ): ConversionResult {
   const found = mappings.find((m) => m.modernPage === modernPage)
   if (!found) {
@@ -222,7 +234,7 @@ export function convertModernToAncient(
  */
 export function convertAncientToModern(
   mappings: PageMapping[],
-  ancientPage: string,
+  ancientPage: string
 ): ConversionResult {
   const normalized = normalizePageInput(ancientPage)
   const found = mappings.find((m) => m.ancientPage === normalized)
@@ -242,7 +254,7 @@ export function convertAncientToModern(
 export function convertPage(
   mappings: PageMapping[],
   inputType: PageInputType,
-  inputValue: string,
+  inputValue: string
 ): ConversionResult {
   if (inputType === 'modern') {
     const error = validateModernPage(inputValue)
@@ -304,7 +316,7 @@ export function validatePageRange(start: string, end: string): string | null {
 export function convertPageRange(
   mappings: PageMapping[],
   startModernPage: number,
-  endModernPage: number,
+  endModernPage: number
 ): BatchConversionResult {
   const items: BatchConversionItem[] = []
   let foundCount = 0
@@ -316,13 +328,13 @@ export function convertPageRange(
       items.push({
         modernPage: modern,
         ancientPage: found.ancientPage,
-        found: true,
+        found: true
       })
     } else {
       items.push({
         modernPage: modern,
         ancientPage: '',
-        found: false,
+        found: false
       })
     }
   }
@@ -330,6 +342,6 @@ export function convertPageRange(
   return {
     items,
     total: items.length,
-    foundCount,
+    foundCount
   }
 }

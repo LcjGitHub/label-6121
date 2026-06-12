@@ -11,9 +11,7 @@
  * @returns 全角数字已转换为半角的字符串
  */
 export function toHalfWidthDigits(value: string): string {
-  return value.replace(/[０-９]/g, (ch) =>
-    String.fromCharCode(ch.charCodeAt(0) - 0xfee0),
-  )
+  return value.replace(/[０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xfee0))
 }
 
 /**

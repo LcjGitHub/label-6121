@@ -30,7 +30,7 @@ function handleVolumeClick(editionId: string, volumeId: string): void {
   editionStore.selectedVolumeId = volumeId
   router.push({
     path: '/',
-    query: { edition: editionId, volume: volumeId },
+    query: { edition: editionId, volume: volumeId }
   })
 }
 
@@ -275,7 +275,9 @@ const sortedEditions = computed(() => editionStore.getSortedEditionsWithFavorite
   cursor: pointer;
   font: inherit;
   color: inherit;
-  transition: background-color 0.2s ease, padding-left 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    padding-left 0.2s ease;
   outline: none;
 }
 

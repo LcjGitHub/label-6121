@@ -12,7 +12,7 @@ const REQUIRED_RECORD_FIELDS: Array<keyof ConversionRecord> = [
   'inputType',
   'inputValue',
   'outputValue',
-  'createdAt',
+  'createdAt'
 ]
 
 export function serializeBackup(records: ConversionRecord[]): string {
@@ -20,9 +20,9 @@ export function serializeBackup(records: ConversionRecord[]): string {
     meta: {
       version: BACKUP_VERSION,
       exportedAt: dayjs().format('YYYY-MM-DD HH:mm:ss'),
-      recordCount: records.length,
+      recordCount: records.length
     },
-    records,
+    records
   }
   return JSON.stringify(backup, null, 2)
 }
@@ -32,8 +32,7 @@ export function triggerDownload(jsonStr: string, filename?: string): void {
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download =
-    filename ?? `对照记录备份-${dayjs().format('YYYYMMDD-HHmmss')}.json`
+  anchor.download = filename ?? `对照记录备份-${dayjs().format('YYYYMMDD-HHmmss')}.json`
   document.body.appendChild(anchor)
   anchor.click()
   document.body.removeChild(anchor)
@@ -57,19 +56,14 @@ export function parseBackupFile(text: string): MappingBackup {
     throw new Error('备份文件格式不正确，无法解析')
   }
   const backup = parsed as MappingBackup
-  if (
-    typeof backup.meta.version !== 'string' ||
-    typeof backup.meta.exportedAt !== 'string'
-  ) {
+  if (typeof backup.meta.version !== 'string' || typeof backup.meta.exportedAt !== 'string') {
     throw new Error('备份文件格式不正确，无法解析')
   }
   for (let i = 0; i < backup.records.length; i++) {
     const rec = backup.records[i] as ConversionRecord
     for (const field of REQUIRED_RECORD_FIELDS) {
       if (!rec[field]) {
-        throw new Error(
-          `第 ${i + 1} 条记录缺少必填字段「${field}」，备份文件格式不正确`,
-        )
+        throw new Error(`第 ${i + 1} 条记录缺少必填字段「${field}」，备份文件格式不正确`)
       }
     }
     if (rec.remark === undefined) {
@@ -87,7 +81,7 @@ export interface MergeResult {
 
 export function mergeRecords(
   existing: ConversionRecord[],
-  incoming: ConversionRecord[],
+  incoming: ConversionRecord[]
 ): MergeResult {
   const map = new Map<string, ConversionRecord>()
   let added = 0

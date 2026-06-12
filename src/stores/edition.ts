@@ -2,7 +2,14 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import dayjs from 'dayjs'
 import editionsData from '@/mock/editions.json'
-import type { ConversionRecord, Edition, MappingBackup, PageInputType, PrefillConvertData, Volume } from '@/types'
+import type {
+  ConversionRecord,
+  Edition,
+  MappingBackup,
+  PageInputType,
+  PrefillConvertData,
+  Volume
+} from '@/types'
 import { mergeRecords, parseBackupFile, serializeBackup, triggerDownload } from '@/utils/backup'
 
 /**
@@ -23,9 +30,7 @@ export const useEditionStore = defineStore(
     const favoriteCount = computed(() => favoriteEditionIds.value.length)
 
     const sortedRecords = computed(() =>
-      [...records.value].sort(
-        (a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf(),
-      ),
+      [...records.value].sort((a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf())
     )
 
     const filteredRecords = computed(() => {
@@ -89,7 +94,7 @@ export const useEditionStore = defineStore(
         id: e.id,
         name: e.name,
         description: e.description,
-        isFavorite: isFavoriteEdition(e.id),
+        isFavorite: isFavoriteEdition(e.id)
       }))
       result.sort((a, b) => {
         if (a.isFavorite && !b.isFavorite) return -1
@@ -116,7 +121,7 @@ export const useEditionStore = defineStore(
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         remark: '',
         ...payload,
-        createdAt: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+        createdAt: dayjs().format('YYYY-MM-DD HH:mm:ss')
       })
     }
 
@@ -205,12 +210,12 @@ export const useEditionStore = defineStore(
       exportRecords,
       importRecords,
       setPrefillData,
-      consumePrefillData,
+      consumePrefillData
     }
   },
   {
     persist: {
-      paths: ['records', 'favoriteEditionIds'],
-    },
-  },
+      paths: ['records', 'favoriteEditionIds']
+    }
+  }
 )

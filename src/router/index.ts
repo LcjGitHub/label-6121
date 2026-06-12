@@ -7,27 +7,27 @@ const router = createRouter({
       path: '/',
       name: 'convert',
       component: () => import('@/views/ConvertView.vue'),
-      meta: { title: '页码换算' },
+      meta: { title: '页码换算' }
     },
     {
       path: '/history',
       name: 'history',
       component: () => import('@/views/HistoryView.vue'),
-      meta: { title: '对照记录' },
+      meta: { title: '对照记录' }
     },
     {
       path: '/mapping',
       name: 'mapping',
       component: () => import('@/views/MappingView.vue'),
-      meta: { title: '卷册完整映射表' },
+      meta: { title: '卷册完整映射表' }
     },
     {
       path: '/catalog',
       name: 'catalog',
       component: () => import('@/views/CatalogView.vue'),
-      meta: { title: '古籍版本目录' },
-    },
-  ],
+      meta: { title: '古籍版本目录' }
+    }
+  ]
 })
 
 router.afterEach((to) => {

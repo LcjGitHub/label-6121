@@ -5,10 +5,21 @@ import { ElMessage } from 'element-plus'
 import { Star, StarFilled } from '@element-plus/icons-vue'
 import { useToggle } from '@vueuse/core'
 import { useEditionStore } from '@/stores/edition'
-import { convertPage, convertPageRange, validatePageInput, validatePageRange } from '@/utils/converter'
+import {
+  convertPage,
+  convertPageRange,
+  validatePageInput,
+  validatePageRange
+} from '@/utils/converter'
 import { normalizePageInput } from '@/utils/pageNormalize'
 import MappingTable from '@/components/MappingTable.vue'
-import type { BatchConversionResult, ConvertMode, NearbySuggestion, PageInputType, PrefillConvertData } from '@/types'
+import type {
+  BatchConversionResult,
+  ConvertMode,
+  NearbySuggestion,
+  PageInputType,
+  PrefillConvertData
+} from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -55,7 +66,11 @@ function handleModeChange(): void {
   resetBatchResult()
 }
 
-function sanitizeRouteQuery(editionId: string | undefined, volumeId: string | undefined, prefill: PrefillConvertData | null): {
+function sanitizeRouteQuery(
+  editionId: string | undefined,
+  volumeId: string | undefined,
+  prefill: PrefillConvertData | null
+): {
   validEdition: string | undefined
   validVolume: string | undefined
   needsUpdate: boolean
@@ -106,7 +121,11 @@ function applyRouteQuery(): void {
   const queryEdition = route.query.edition as string | undefined
   const queryVolume = route.query.volume as string | undefined
 
-  const { validEdition, validVolume, needsUpdate } = sanitizeRouteQuery(queryEdition, queryVolume, prefill)
+  const { validEdition, validVolume, needsUpdate } = sanitizeRouteQuery(
+    queryEdition,
+    queryVolume,
+    prefill
+  )
 
   if (validEdition) {
     editionStore.selectedEditionId = validEdition
@@ -142,8 +161,8 @@ function applyRouteQuery(): void {
         path: route.path,
         query: {
           ...(currentEdition ? { edition: currentEdition } : {}),
-          ...(currentVolume ? { volume: currentVolume } : {}),
-        },
+          ...(currentVolume ? { volume: currentVolume } : {})
+        }
       })
       .finally(() => {
         isUpdatingQuery = false
@@ -157,28 +176,32 @@ watch(
   () => [route.query.edition, route.query.volume],
   () => {
     applyRouteQuery()
-  },
+  }
 )
 
 const editionId = computed({
   get: () => editionStore.selectedEditionId,
-  set: (val: string) => { editionStore.selectedEditionId = val },
+  set: (val: string) => {
+    editionStore.selectedEditionId = val
+  }
 })
 const volumeId = computed({
   get: () => editionStore.selectedVolumeId,
-  set: (val: string) => { editionStore.selectedVolumeId = val },
+  set: (val: string) => {
+    editionStore.selectedVolumeId = val
+  }
 })
 
 const editionOptions = computed(() =>
   editionStore.getSortedEditionsWithFavorite().map((e) => ({
     label: e.name,
     value: e.id,
-    isFavorite: e.isFavorite,
-  })),
+    isFavorite: e.isFavorite
+  }))
 )
 
 const isCurrentFavorite = computed(() =>
-  editionId.value ? editionStore.isFavoriteEdition(editionId.value) : false,
+  editionId.value ? editionStore.isFavoriteEdition(editionId.value) : false
 )
 
 const favoriteCount = computed(() => editionStore.favoriteCount)
@@ -195,17 +218,13 @@ const volumeOptions = computed(() => {
 
 const selectedEdition = computed(() => editionStore.getEditionById(editionId.value))
 
-const selectedVolume = computed(() =>
-  editionStore.getVolumeById(editionId.value, volumeId.value),
-)
+const selectedVolume = computed(() => editionStore.getVolumeById(editionId.value, volumeId.value))
 
 const inputPlaceholder = computed(() =>
-  inputType.value === 'modern' ? '请输入现代页码（正整数）' : '请输入古页码',
+  inputType.value === 'modern' ? '请输入现代页码（正整数）' : '请输入古页码'
 )
 
-const outputLabel = computed(() =>
-  inputType.value === 'modern' ? '古页码' : '现代页码',
-)
+const outputLabel = computed(() => (inputType.value === 'modern' ? '古页码' : '现代页码'))
 
 const hasResult = computed(() => Boolean(outputValue.value))
 
@@ -335,7 +354,7 @@ async function confirmSave(): Promise<void> {
       inputType: inputType.value,
       inputValue: normalizePageInput(inputValue.value),
       outputValue: outputValue.value,
-      remark,
+      remark
     })
     remarkDialogVisible.value = false
     ElMessage.success('已保存对照记录')
@@ -401,9 +420,7 @@ function handleBatchCurrentChange(page: number): void {
 <template>
   <div class="page-container">
     <h1 class="page-title">页码换算</h1>
-    <p class="page-subtitle">
-      选择古籍版本与卷册，输入现代页码或古页码，自动换算另一种页码体系
-    </p>
+    <p class="page-subtitle">选择古籍版本与卷册，输入现代页码或古页码，自动换算另一种页码体系</p>
 
     <div class="literary-card">
       <el-form label-position="top" @submit.prevent="handleSubmit">
@@ -411,11 +428,7 @@ function handleBatchCurrentChange(page: number): void {
           <el-col :xs="24" :sm="12">
             <el-form-item label="古籍版本">
               <div class="edition-select-wrapper">
-                <el-select
-                  v-model="editionId"
-                  placeholder="请选择版本"
-                  style="width: 100%"
-                >
+                <el-select v-model="editionId" placeholder="请选择版本" style="width: 100%">
                   <el-option
                     v-for="opt in editionOptions"
                     :key="opt.value"
@@ -424,11 +437,7 @@ function handleBatchCurrentChange(page: number): void {
                   >
                     <div class="option-content">
                       <span class="option-label">{{ opt.label }}</span>
-                      <el-icon
-                        v-if="opt.isFavorite"
-                        class="star-icon favorite"
-                        :size="14"
-                      >
+                      <el-icon v-if="opt.isFavorite" class="star-icon favorite" :size="14">
                         <StarFilled />
                       </el-icon>
                     </div>
@@ -515,23 +524,23 @@ function handleBatchCurrentChange(page: number): void {
             <el-col :xs="24" :sm="12">
               <el-form-item label="起始现代页码">
                 <el-input
-              v-model="startPage"
-              placeholder="请输入起始现代页码（正整数）"
-              clearable
-              type="number"
-              @keyup.enter="handleBatchConvert"
-            />
+                  v-model="startPage"
+                  placeholder="请输入起始现代页码（正整数）"
+                  clearable
+                  type="number"
+                  @keyup.enter="handleBatchConvert"
+                />
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12">
               <el-form-item label="结束现代页码">
                 <el-input
-              v-model="endPage"
-              placeholder="请输入结束现代页码（正整数）"
-              clearable
-              type="number"
-              @keyup.enter="handleBatchConvert"
-            />
+                  v-model="endPage"
+                  placeholder="请输入结束现代页码（正整数）"
+                  clearable
+                  type="number"
+                  @keyup.enter="handleBatchConvert"
+                />
               </el-form-item>
             </el-col>
           </el-row>
@@ -554,28 +563,14 @@ function handleBatchCurrentChange(page: number): void {
         </div>
         <div class="batch-table-wrapper">
           <el-table :data="paginatedBatchItems" stripe style="width: 100%" size="small">
-            <el-table-column
-              prop="modernPage"
-              label="现代页码"
-              width="100"
-              align="center"
-            />
-            <el-table-column
-              prop="ancientPage"
-              label="古页码"
-              min-width="120"
-              align="center"
-            >
+            <el-table-column prop="modernPage" label="现代页码" width="100" align="center" />
+            <el-table-column prop="ancientPage" label="古页码" min-width="120" align="center">
               <template #default="{ row }">
                 <span v-if="row.found">{{ row.ancientPage }}</span>
                 <span v-else class="not-found">未匹配</span>
               </template>
             </el-table-column>
-            <el-table-column
-              label="状态"
-              width="90"
-              align="center"
-            >
+            <el-table-column label="状态" width="90" align="center">
               <template #default="{ row }">
                 <el-tag :type="row.found ? 'success' : 'info'" size="small">
                   {{ row.found ? '已匹配' : '未匹配' }}
@@ -650,9 +645,7 @@ function handleBatchCurrentChange(page: number): void {
       </el-form>
       <template #footer>
         <el-button @click="cancelSave">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="confirmSave">
-          确认保存
-        </el-button>
+        <el-button type="primary" :loading="saving" @click="confirmSave"> 确认保存 </el-button>
       </template>
     </el-dialog>
   </div>

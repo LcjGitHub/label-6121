@@ -13,7 +13,10 @@ const pageSize = ref(10)
 
 let isUpdatingQuery = false
 
-function sanitizeRouteQuery(editionId: string | undefined, volumeId: string | undefined): {
+function sanitizeRouteQuery(
+  editionId: string | undefined,
+  volumeId: string | undefined
+): {
   validEdition: string | undefined
   validVolume: string | undefined
   needsUpdate: boolean
@@ -71,8 +74,8 @@ function applyRouteQuery(): void {
         path: route.path,
         query: {
           ...(currentEdition ? { edition: currentEdition } : {}),
-          ...(currentVolume ? { volume: currentVolume } : {}),
-        },
+          ...(currentVolume ? { volume: currentVolume } : {})
+        }
       })
       .finally(() => {
         isUpdatingQuery = false
@@ -86,28 +89,32 @@ watch(
   () => [route.query.edition, route.query.volume],
   () => {
     applyRouteQuery()
-  },
+  }
 )
 
 const editionId = computed({
   get: () => editionStore.selectedEditionId,
-  set: (val: string) => { editionStore.selectedEditionId = val },
+  set: (val: string) => {
+    editionStore.selectedEditionId = val
+  }
 })
 const volumeId = computed({
   get: () => editionStore.selectedVolumeId,
-  set: (val: string) => { editionStore.selectedVolumeId = val },
+  set: (val: string) => {
+    editionStore.selectedVolumeId = val
+  }
 })
 
 const editionOptions = computed(() =>
   editionStore.getSortedEditionsWithFavorite().map((e) => ({
     label: e.name,
     value: e.id,
-    isFavorite: e.isFavorite,
-  })),
+    isFavorite: e.isFavorite
+  }))
 )
 
 const isCurrentFavorite = computed(() =>
-  editionId.value ? editionStore.isFavoriteEdition(editionId.value) : false,
+  editionId.value ? editionStore.isFavoriteEdition(editionId.value) : false
 )
 
 const favoriteCount = computed(() => editionStore.favoriteCount)
@@ -124,9 +131,7 @@ const volumeOptions = computed(() => {
 
 const selectedEdition = computed(() => editionStore.getEditionById(editionId.value))
 
-const selectedVolume = computed(() =>
-  editionStore.getVolumeById(editionId.value, volumeId.value),
-)
+const selectedVolume = computed(() => editionStore.getVolumeById(editionId.value, volumeId.value))
 
 const paginatedMappings = computed(() => {
   const mappings = selectedVolume.value?.mappings ?? []
@@ -156,9 +161,7 @@ function handleCurrentChange(page: number): void {
 <template>
   <div class="page-container">
     <h1 class="page-title">卷册完整映射表</h1>
-    <p class="page-subtitle">
-      选择古籍版本与卷册，浏览该卷全部现代页码与古页码的完整对照关系
-    </p>
+    <p class="page-subtitle">选择古籍版本与卷册，浏览该卷全部现代页码与古页码的完整对照关系</p>
 
     <div class="literary-card filter-card">
       <el-row :gutter="16" align="middle">
@@ -178,11 +181,7 @@ function handleCurrentChange(page: number): void {
               >
                 <div class="option-content">
                   <span class="option-label">{{ opt.label }}</span>
-                  <el-icon
-                    v-if="opt.isFavorite"
-                    class="star-icon favorite"
-                    :size="14"
-                  >
+                  <el-icon v-if="opt.isFavorite" class="star-icon favorite" :size="14">
                     <StarFilled />
                   </el-icon>
                 </div>

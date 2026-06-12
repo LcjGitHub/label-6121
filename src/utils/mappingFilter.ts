@@ -1,9 +1,5 @@
 import type { PageMapping } from '@/types'
-import {
-  isNumericKeyword,
-  normalizeForSearch,
-  normalizePageInput,
-} from '@/utils/pageNormalize'
+import { isNumericKeyword, normalizeForSearch, normalizePageInput } from '@/utils/pageNormalize'
 
 export type FilterField = 'both' | 'modern' | 'ancient'
 
@@ -37,7 +33,7 @@ function matchValue(source: string, target: string, exactMatch: boolean): boolea
 export function filterMappings(
   mappings: PageMapping[],
   keyword: string,
-  options: FilterOptions = {},
+  options: FilterOptions = {}
 ): PageMapping[] {
   const { field = 'both', caseSensitive = false, exactMatch = false } = options
   const normalizedKeyword = normalizePageInput(keyword)
@@ -91,14 +87,14 @@ export function filterMappings(
 export function filterMappingsWithStats(
   mappings: PageMapping[],
   keyword: string,
-  options: FilterOptions = {},
+  options: FilterOptions = {}
 ): FilterResult {
   const items = filterMappings(mappings, keyword, options)
   return {
     items,
     total: mappings.length,
     matched: items.length,
-    keyword: normalizePageInput(keyword),
+    keyword: normalizePageInput(keyword)
   }
 }
 
