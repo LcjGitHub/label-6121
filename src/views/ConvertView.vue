@@ -6,6 +6,7 @@ import { Star, StarFilled } from '@element-plus/icons-vue'
 import { useToggle } from '@vueuse/core'
 import { useEditionStore } from '@/stores/edition'
 import { convertPage, convertPageRange, validatePageInput, validatePageRange } from '@/utils/converter'
+import { normalizePageInput } from '@/utils/pageNormalize'
 import MappingTable from '@/components/MappingTable.vue'
 import type { BatchConversionResult, ConvertMode, NearbySuggestion, PageInputType, PrefillConvertData } from '@/types'
 
@@ -332,7 +333,7 @@ async function confirmSave(): Promise<void> {
       volumeId: volume.id,
       volumeName: volume.name,
       inputType: inputType.value,
-      inputValue: inputValue.value.trim(),
+      inputValue: normalizePageInput(inputValue.value),
       outputValue: outputValue.value,
       remark,
     })
@@ -371,8 +372,8 @@ function handleBatchConvert(): void {
     return
   }
 
-  const startNum = Number(startPage.value.trim())
-  const endNum = Number(endPage.value.trim())
+  const startNum = Number(normalizePageInput(startPage.value))
+  const endNum = Number(normalizePageInput(endPage.value))
   const result = convertPageRange(volume.mappings, startNum, endNum)
 
   batchResult.value = result

@@ -1,4 +1,9 @@
 import type { PageMapping } from '@/types'
+import {
+  isNumericKeyword,
+  normalizeForSearch,
+  normalizePageInput,
+} from '@/utils/pageNormalize'
 
 export type FilterField = 'both' | 'modern' | 'ancient'
 
@@ -13,10 +18,6 @@ export interface FilterResult {
   total: number
   matched: number
   keyword: string
-}
-
-function normalize(value: string, caseSensitive: boolean): string {
-  return caseSensitive ? value : value.toLowerCase()
 }
 
 function matchValue(source: string, target: string, exactMatch: boolean): boolean {
@@ -39,31 +40,31 @@ export function filterMappings(
   options: FilterOptions = {},
 ): PageMapping[] {
   const { field = 'both', caseSensitive = false, exactMatch = false } = options
-  const trimmed = keyword.trim()
+  const normalizedKeyword = normalizePageInput(keyword)
 
-  if (!trimmed) {
+  if (!normalizedKeyword) {
     return mappings
   }
 
-  const normalizedKeyword = normalize(trimmed, caseSensitive)
-  const isPureNumeric = isNumericKeyword(trimmed)
+  const searchKeyword = normalizeForSearch(keyword, caseSensitive)
+  const isPureNumeric = isNumericKeyword(keyword)
 
   return mappings.filter((m) => {
-    const modernStr = normalize(String(m.modernPage), caseSensitive)
-    const ancientStr = normalize(m.ancientPage, caseSensitive)
+    const modernStr = normalizeForSearch(String(m.modernPage), caseSensitive)
+    const ancientStr = normalizeForSearch(m.ancientPage, caseSensitive)
 
     const matchModern = (): boolean => {
       if (isPureNumeric) {
-        return m.modernPage === Number(trimmed)
+        return m.modernPage === Number(normalizedKeyword)
       }
       if (exactMatch) {
-        return modernStr === normalizedKeyword
+        return modernStr === searchKeyword
       }
-      return modernStr.includes(normalizedKeyword)
+      return modernStr.includes(searchKeyword)
     }
 
     const matchAncient = (): boolean => {
-      return matchValue(ancientStr, normalizedKeyword, exactMatch)
+      return matchValue(ancientStr, searchKeyword, exactMatch)
     }
 
     switch (field) {
@@ -97,17 +98,8 @@ export function filterMappingsWithStats(
     items,
     total: mappings.length,
     matched: items.length,
-    keyword: keyword.trim(),
+    keyword: normalizePageInput(keyword),
   }
-}
-
-/**
- * 检查关键字是否可能是数字（现代页码）
- */
-export function isNumericKeyword(keyword: string): boolean {
-  const trimmed = keyword.trim()
-  if (!trimmed) return false
-  return /^\d+$/.test(trimmed)
 }
 
 /**

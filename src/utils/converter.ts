@@ -6,20 +6,21 @@ import type {
   PageInputType,
   PageMapping,
 } from '@/types'
+import { normalizePageInput } from '@/utils/pageNormalize'
 
 /**
  * 校验现代页码是否为正整数
  * @param value - 输入字符串
  */
 export function validateModernPage(value: string): string | null {
-  const trimmed = value.trim()
-  if (!trimmed) {
+  const normalized = normalizePageInput(value)
+  if (!normalized) {
     return '请输入现代页码'
   }
-  if (!/^\d+$/.test(trimmed)) {
+  if (!/^\d+$/.test(normalized)) {
     return '现代页码须为正整数'
   }
-  const num = Number(trimmed)
+  const num = Number(normalized)
   if (num <= 0 || !Number.isInteger(num)) {
     return '现代页码须为正整数'
   }
@@ -31,8 +32,8 @@ export function validateModernPage(value: string): string | null {
  * @param value - 输入字符串
  */
 export function validateAncientPage(value: string): string | null {
-  const trimmed = value.trim()
-  if (!trimmed) {
+  const normalized = normalizePageInput(value)
+  if (!normalized) {
     return '请输入古页码'
   }
   return null
@@ -171,7 +172,7 @@ export function findNearbySuggestions(
   if (mappings.length === 0) return []
 
   if (inputType === 'modern') {
-    const num = Number(inputValue.trim())
+    const num = Number(normalizePageInput(inputValue))
     const sorted = [...mappings].sort((a, b) => {
       const distA = Math.abs(a.modernPage - num)
       const distB = Math.abs(b.modernPage - num)
@@ -184,8 +185,8 @@ export function findNearbySuggestions(
     }))
   }
 
-  const trimmed = inputValue.trim()
-  let insertIdx = mappings.findIndex((m) => compareAncientPages(m.ancientPage, trimmed) >= 0)
+  const normalized = normalizePageInput(inputValue)
+  let insertIdx = mappings.findIndex((m) => compareAncientPages(m.ancientPage, normalized) >= 0)
   if (insertIdx === -1) insertIdx = mappings.length
 
   const start = Math.max(0, insertIdx - 1)
@@ -223,10 +224,10 @@ export function convertAncientToModern(
   mappings: PageMapping[],
   ancientPage: string,
 ): ConversionResult {
-  const trimmed = ancientPage.trim()
-  const found = mappings.find((m) => m.ancientPage === trimmed)
+  const normalized = normalizePageInput(ancientPage)
+  const found = mappings.find((m) => m.ancientPage === normalized)
   if (!found) {
-    const suggestions = findNearbySuggestions(mappings, 'ancient', trimmed)
+    const suggestions = findNearbySuggestions(mappings, 'ancient', normalized)
     return { success: false, message: '未找到对应现代页码，请核对卷册与页码', suggestions }
   }
   return { success: true, outputValue: String(found.modernPage) }
@@ -248,7 +249,7 @@ export function convertPage(
     if (error) {
       return { success: false, message: error }
     }
-    return convertModernToAncient(mappings, Number(inputValue.trim()))
+    return convertModernToAncient(mappings, Number(normalizePageInput(inputValue)))
   }
 
   const error = validateAncientPage(inputValue)
@@ -267,24 +268,24 @@ export function convertPage(
  * @returns 校验通过返回 null，否则返回错误信息
  */
 export function validatePageRange(start: string, end: string): string | null {
-  const startTrimmed = start.trim()
-  const endTrimmed = end.trim()
+  const startNormalized = normalizePageInput(start)
+  const endNormalized = normalizePageInput(end)
 
-  if (!startTrimmed) {
+  if (!startNormalized) {
     return '请输入起始现代页码'
   }
-  if (!/^\d+$/.test(startTrimmed) || Number(startTrimmed) <= 0) {
+  if (!/^\d+$/.test(startNormalized) || Number(startNormalized) <= 0) {
     return '现代页码须为正整数'
   }
 
-  if (!endTrimmed) {
+  if (!endNormalized) {
     return '请输入结束现代页码'
   }
-  if (!/^\d+$/.test(endTrimmed) || Number(endTrimmed) <= 0) {
+  if (!/^\d+$/.test(endNormalized) || Number(endNormalized) <= 0) {
     return '现代页码须为正整数'
   }
 
-  if (Number(startTrimmed) > Number(endTrimmed)) {
+  if (Number(startNormalized) > Number(endNormalized)) {
     return '起始页不得大于结束页'
   }
 
