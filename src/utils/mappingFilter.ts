@@ -46,22 +46,37 @@ export function filterMappings(
   }
 
   const normalizedKeyword = normalize(trimmed, caseSensitive)
+  const isPureNumeric = isNumericKeyword(trimmed)
 
   return mappings.filter((m) => {
     const modernStr = normalize(String(m.modernPage), caseSensitive)
     const ancientStr = normalize(m.ancientPage, caseSensitive)
 
+    const matchModern = (): boolean => {
+      if (isPureNumeric) {
+        return m.modernPage === Number(trimmed)
+      }
+      if (exactMatch) {
+        return modernStr === normalizedKeyword
+      }
+      return modernStr.includes(normalizedKeyword)
+    }
+
+    const matchAncient = (): boolean => {
+      return matchValue(ancientStr, normalizedKeyword, exactMatch)
+    }
+
     switch (field) {
       case 'modern':
-        return matchValue(modernStr, normalizedKeyword, exactMatch)
+        return matchModern()
       case 'ancient':
-        return matchValue(ancientStr, normalizedKeyword, exactMatch)
+        return matchAncient()
       case 'both':
       default:
-        return (
-          matchValue(modernStr, normalizedKeyword, exactMatch) ||
-          matchValue(ancientStr, normalizedKeyword, exactMatch)
-        )
+        if (isPureNumeric) {
+          return matchModern() || matchAncient()
+        }
+        return matchAncient()
     }
   })
 }
