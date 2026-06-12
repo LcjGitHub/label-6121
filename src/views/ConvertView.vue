@@ -119,6 +119,15 @@ function applyRouteQuery(): void {
 
 applyRouteQuery()
 
+const prefill = editionStore.consumePrefillData()
+if (prefill) {
+  inputType.value = prefill.inputType
+  inputValue.value = prefill.inputValue
+  convertMode.value = 'single'
+  resetResult()
+  resetBatchResult()
+}
+
 watch(
   () => [route.query.edition, route.query.volume],
   () => {

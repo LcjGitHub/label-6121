@@ -44,6 +44,14 @@ export interface ConversionRecord {
   createdAt: string
 }
 
+/** 再次换算回填数据 */
+export interface PrefillConvertData {
+  editionId: string
+  volumeId: string
+  inputType: PageInputType
+  inputValue: string
+}
+
 /** 换算结果 */
 export interface ConversionResult {
   success: boolean

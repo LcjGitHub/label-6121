@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import dayjs from 'dayjs'
 import editionsData from '@/mock/editions.json'
-import type { ConversionRecord, Edition, MappingBackup, PageInputType, Volume } from '@/types'
+import type { ConversionRecord, Edition, MappingBackup, PageInputType, PrefillConvertData, Volume } from '@/types'
 import { mergeRecords, parseBackupFile, serializeBackup, triggerDownload } from '@/utils/backup'
 
 /**
@@ -18,6 +18,7 @@ export const useEditionStore = defineStore(
     const favoriteEditionIds = ref<string[]>([])
     const filterEditionId = ref('')
     const filterInputType = ref<PageInputType | ''>('')
+    const prefillData = ref<PrefillConvertData | null>(null)
 
     const favoriteCount = computed(() => favoriteEditionIds.value.length)
 
@@ -165,6 +166,16 @@ export const useEditionStore = defineStore(
       return { added: result.added, updated: result.updated, total: records.value.length }
     }
 
+    function setPrefillData(data: PrefillConvertData): void {
+      prefillData.value = { ...data }
+    }
+
+    function consumePrefillData(): PrefillConvertData | null {
+      const data = prefillData.value
+      prefillData.value = null
+      return data
+    }
+
     return {
       editions,
       records,
@@ -191,6 +202,8 @@ export const useEditionStore = defineStore(
       syncVolumeOnEditionChange,
       exportRecords,
       importRecords,
+      setPrefillData,
+      consumePrefillData,
     }
   },
   {

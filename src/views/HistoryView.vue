@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
 import { useEditionStore } from '@/stores/edition'
 import type { ConversionRecord, PageInputType } from '@/types'
 
+const router = useRouter()
 const editionStore = useEditionStore()
 
 const records = computed(() => editionStore.filteredRecords)
@@ -55,6 +57,24 @@ async function handleDelete(record: ConversionRecord): Promise<void> {
   } catch {
     /* 用户取消 */
   }
+}
+
+function handleReconvert(record: ConversionRecord): void {
+  editionStore.setPrefillData({
+    editionId: record.editionId,
+    volumeId: record.volumeId,
+    inputType: record.inputType,
+    inputValue: record.inputValue,
+  })
+  router.push({
+    path: '/',
+    query: {
+      edition: record.editionId,
+      volume: record.volumeId,
+    },
+  }).catch((err) => {
+    if (err.name !== 'NavigationDuplicated') throw err
+  })
 }
 
 async function handleClearAll(): Promise<void> {
@@ -231,8 +251,11 @@ const hasActiveFilters = computed(
               {{ formatConversion(row) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="80" fixed="right">
+          <el-table-column label="操作" width="130" fixed="right">
             <template #default="{ row }">
+              <el-button type="primary" link size="small" @click="handleReconvert(row)">
+                再次换算
+              </el-button>
               <el-button type="danger" link size="small" @click="handleDelete(row)">
                 删除
               </el-button>
