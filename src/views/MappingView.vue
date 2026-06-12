@@ -1,11 +1,60 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { Star, StarFilled } from '@element-plus/icons-vue'
 import { useEditionStore } from '@/stores/edition'
 
+const route = useRoute()
 const editionStore = useEditionStore()
 
-editionStore.initSelection()
+function initFromRouteOrStore(): void {
+  const queryEdition = route.query.edition as string | undefined
+  const queryVolume = route.query.volume as string | undefined
+
+  if (queryEdition) {
+    const editionExists = editionStore.getEditionById(queryEdition)
+    if (editionExists) {
+      editionStore.selectedEditionId = queryEdition
+      if (queryVolume) {
+        const volumeExists = editionStore.getVolumeById(queryEdition, queryVolume)
+        if (volumeExists) {
+          editionStore.selectedVolumeId = queryVolume
+          return
+        }
+      }
+      editionStore.syncVolumeOnEditionChange()
+      return
+    }
+  }
+
+  editionStore.initSelection()
+}
+
+initFromRouteOrStore()
+
+watch(
+  () => [route.query.edition, route.query.volume],
+  () => {
+    const queryEdition = route.query.edition as string | undefined
+    const queryVolume = route.query.volume as string | undefined
+    if (queryEdition) {
+      const editionExists = editionStore.getEditionById(queryEdition)
+      if (editionExists) {
+        editionStore.selectedEditionId = queryEdition
+        if (queryVolume) {
+          const volumeExists = editionStore.getVolumeById(queryEdition, queryVolume)
+          if (volumeExists) {
+            editionStore.selectedVolumeId = queryVolume
+            currentPage.value = 1
+            return
+          }
+        }
+        editionStore.syncVolumeOnEditionChange()
+        currentPage.value = 1
+      }
+    }
+  },
+)
 
 const editionId = computed({
   get: () => editionStore.selectedEditionId,

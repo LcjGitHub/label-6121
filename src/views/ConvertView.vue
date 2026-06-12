@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Star, StarFilled } from '@element-plus/icons-vue'
 import { useToggle } from '@vueuse/core'
@@ -7,9 +8,71 @@ import { useEditionStore } from '@/stores/edition'
 import { convertPage, validatePageInput } from '@/utils/converter'
 import type { PageInputType } from '@/types'
 
+const route = useRoute()
 const editionStore = useEditionStore()
 
-editionStore.initSelection()
+const inputType = ref<PageInputType>('modern')
+const inputValue = ref('')
+const outputValue = ref('')
+const errorMessage = ref('')
+
+const [saving, toggleSaving] = useToggle(false)
+
+function resetResult(): void {
+  outputValue.value = ''
+  errorMessage.value = ''
+}
+
+function initFromRouteOrStore(): void {
+  const queryEdition = route.query.edition as string | undefined
+  const queryVolume = route.query.volume as string | undefined
+
+  if (queryEdition) {
+    const editionExists = editionStore.getEditionById(queryEdition)
+    if (editionExists) {
+      editionStore.selectedEditionId = queryEdition
+      if (queryVolume) {
+        const volumeExists = editionStore.getVolumeById(queryEdition, queryVolume)
+        if (volumeExists) {
+          editionStore.selectedVolumeId = queryVolume
+          resetResult()
+          return
+        }
+      }
+      editionStore.syncVolumeOnEditionChange()
+      resetResult()
+      return
+    }
+  }
+
+  editionStore.initSelection()
+}
+
+initFromRouteOrStore()
+
+watch(
+  () => [route.query.edition, route.query.volume],
+  () => {
+    const queryEdition = route.query.edition as string | undefined
+    const queryVolume = route.query.volume as string | undefined
+    if (queryEdition) {
+      const editionExists = editionStore.getEditionById(queryEdition)
+      if (editionExists) {
+        editionStore.selectedEditionId = queryEdition
+        if (queryVolume) {
+          const volumeExists = editionStore.getVolumeById(queryEdition, queryVolume)
+          if (volumeExists) {
+            editionStore.selectedVolumeId = queryVolume
+            resetResult()
+            return
+          }
+        }
+        editionStore.syncVolumeOnEditionChange()
+        resetResult()
+      }
+    }
+  },
+)
 
 const editionId = computed({
   get: () => editionStore.selectedEditionId,
@@ -19,12 +82,6 @@ const volumeId = computed({
   get: () => editionStore.selectedVolumeId,
   set: (val: string) => { editionStore.selectedVolumeId = val },
 })
-const inputType = ref<PageInputType>('modern')
-const inputValue = ref('')
-const outputValue = ref('')
-const errorMessage = ref('')
-
-const [saving, toggleSaving] = useToggle(false)
 
 const editionOptions = computed(() =>
   editionStore.getSortedEditionsWithFavorite().map((e) => ({
@@ -74,11 +131,6 @@ watch(editionId, () => {
 watch([inputType, volumeId], () => {
   resetResult()
 })
-
-function resetResult(): void {
-  outputValue.value = ''
-  errorMessage.value = ''
-}
 
 /**
  * 切换输入类型并清空输入

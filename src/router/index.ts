@@ -21,6 +21,12 @@ const router = createRouter({
       component: () => import('@/views/MappingView.vue'),
       meta: { title: '卷册完整映射表' },
     },
+    {
+      path: '/catalog',
+      name: 'catalog',
+      component: () => import('@/views/CatalogView.vue'),
+      meta: { title: '古籍版本目录' },
+    },
   ],
 })
 
