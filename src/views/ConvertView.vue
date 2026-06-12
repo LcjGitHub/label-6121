@@ -6,13 +6,11 @@ import { Star, StarFilled } from '@element-plus/icons-vue'
 import { useToggle } from '@vueuse/core'
 import { useEditionStore } from '@/stores/edition'
 import { convertPage, convertPageRange, validatePageInput, validatePageRange } from '@/utils/converter'
-import type { BatchConversionResult, PageInputType } from '@/types'
+import type { BatchConversionResult, ConvertMode, PageInputType } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const editionStore = useEditionStore()
-
-type ConvertMode = 'single' | 'range'
 
 const convertMode = ref<ConvertMode>('single')
 const inputType = ref<PageInputType>('modern')
@@ -92,6 +90,9 @@ function applyRouteQuery(): void {
     } else {
       editionStore.syncVolumeOnEditionChange()
     }
+    inputValue.value = ''
+    startPage.value = ''
+    endPage.value = ''
     resetResult()
     resetBatchResult()
   } else {
@@ -188,11 +189,15 @@ const batchTotal = computed(() => batchResult.value?.total ?? 0)
 
 watch(editionId, () => {
   editionStore.syncVolumeOnEditionChange()
+  startPage.value = ''
+  endPage.value = ''
   resetResult()
   resetBatchResult()
 })
 
 watch([inputType, volumeId], () => {
+  startPage.value = ''
+  endPage.value = ''
   resetResult()
   resetBatchResult()
 })
@@ -201,6 +206,17 @@ watch(convertMode, () => {
   resetResult()
   resetBatchResult()
 })
+
+/**
+ * 根据当前换算模式分发提交
+ */
+function handleSubmit(): void {
+  if (convertMode.value === 'range') {
+    handleBatchConvert()
+  } else {
+    handleConvert()
+  }
+}
 
 /**
  * 切换输入类型并清空输入
@@ -333,7 +349,7 @@ function handleBatchCurrentChange(page: number): void {
     </p>
 
     <div class="literary-card">
-      <el-form label-position="top" @submit.prevent="handleConvert">
+      <el-form label-position="top" @submit.prevent="handleSubmit">
         <el-row :gutter="20" align="middle">
           <el-col :xs="24" :sm="12">
             <el-form-item label="古籍版本">
@@ -446,6 +462,7 @@ function handleBatchCurrentChange(page: number): void {
               placeholder="请输入起始现代页码（正整数）"
               clearable
               type="number"
+              @keyup.enter="handleBatchConvert"
             />
               </el-form-item>
             </el-col>
@@ -456,6 +473,7 @@ function handleBatchCurrentChange(page: number): void {
               placeholder="请输入结束现代页码（正整数）"
               clearable
               type="number"
+              @keyup.enter="handleBatchConvert"
             />
               </el-form-item>
             </el-col>
@@ -477,42 +495,38 @@ function handleBatchCurrentChange(page: number): void {
         <div class="result-summary">
           批量换算结果：共 {{ batchResult?.foundCount }}/{{ batchResult?.total }} 条匹配
         </div>
-        <el-table :data="paginatedBatchItems" stripe style="width: 100%" size="small">
-          <el-table-column
-            type="index"
-            label="序号"
-            width="80"
-            align="center"
-            :index="(index: number) => (batchCurrentPage - 1) * batchPageSize + index + 1"
-          />
-          <el-table-column
-            prop="modernPage"
-            label="现代页码"
-            width="120"
-            align="center"
-          />
-          <el-table-column
-            prop="ancientPage"
-            label="古页码"
-            align="center"
-          >
-            <template #default="{ row }">
-              <span v-if="row.found">{{ row.ancientPage }}</span>
-              <span v-else class="not-found">未匹配</span>
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="状态"
-            width="100"
-            align="center"
-          >
-            <template #default="{ row }">
-              <el-tag :type="row.found ? 'success' : 'info'" size="small">
-                {{ row.found ? '已匹配' : '未匹配' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="batch-table-wrapper">
+          <el-table :data="paginatedBatchItems" stripe style="width: 100%" size="small">
+            <el-table-column
+              prop="modernPage"
+              label="现代页码"
+              width="100"
+              align="center"
+            />
+            <el-table-column
+              prop="ancientPage"
+              label="古页码"
+              min-width="120"
+              align="center"
+            >
+              <template #default="{ row }">
+                <span v-if="row.found">{{ row.ancientPage }}</span>
+                <span v-else class="not-found">未匹配</span>
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="状态"
+              width="90"
+              align="center"
+            >
+              <template #default="{ row }">
+                <el-tag :type="row.found ? 'success' : 'info'" size="small">
+                  {{ row.found ? '已匹配' : '未匹配' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
 
         <div class="pagination-wrapper">
           <el-pagination
@@ -630,6 +644,11 @@ function handleBatchCurrentChange(page: number): void {
 
 .batch-result-box {
   margin-top: 20px;
+}
+
+.batch-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .result-summary {

@@ -105,23 +105,48 @@ export function convertPage(
   return convertAncientToModern(mappings, inputValue)
 }
 
+/**
+ * 校验页码区间输入的有效性
+ * 依次检查起始页与结束页是否为正整数，以及起始页是否大于结束页。
+ * 错误提示为完整中文句子，不拼接前缀。
+ * @param start - 起始现代页码输入字符串
+ * @param end - 结束现代页码输入字符串
+ * @returns 校验通过返回 null，否则返回错误信息
+ */
 export function validatePageRange(start: string, end: string): string | null {
-  const startError = validateModernPage(start)
-  if (startError) {
-    return `起始页${startError}`
+  const startTrimmed = start.trim()
+  const endTrimmed = end.trim()
+
+  if (!startTrimmed) {
+    return '请输入起始现代页码'
   }
-  const endError = validateModernPage(end)
-  if (endError) {
-    return `结束页${endError}`
+  if (!/^\d+$/.test(startTrimmed) || Number(startTrimmed) <= 0) {
+    return '现代页码须为正整数'
   }
-  const startNum = Number(start.trim())
-  const endNum = Number(end.trim())
-  if (startNum > endNum) {
+
+  if (!endTrimmed) {
+    return '请输入结束现代页码'
+  }
+  if (!/^\d+$/.test(endTrimmed) || Number(endTrimmed) <= 0) {
+    return '现代页码须为正整数'
+  }
+
+  if (Number(startTrimmed) > Number(endTrimmed)) {
     return '起始页不得大于结束页'
   }
+
   return null
 }
 
+/**
+ * 对指定区间内的现代页码执行批量换算
+ * 遍历起始页到结束页之间的每一个现代页码，在映射表中查找对应古页码，
+ * 标记每条记录是否匹配成功，最终汇总返回。
+ * @param mappings - 当前卷册的页码映射表
+ * @param startModernPage - 起始现代页码（正整数）
+ * @param endModernPage - 结束现代页码（正整数，不小于起始页）
+ * @returns 批量换算结果，包含所有条目、总数和匹配数
+ */
 export function convertPageRange(
   mappings: PageMapping[],
   startModernPage: number,

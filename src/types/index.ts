@@ -28,6 +28,9 @@ export interface EditionsData {
 /** 输入页码类型 */
 export type PageInputType = 'modern' | 'ancient'
 
+/** 换算模式 */
+export type ConvertMode = 'single' | 'range'
+
 /** 对照历史记录 */
 export interface ConversionRecord {
   id: string
