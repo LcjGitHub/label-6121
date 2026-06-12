@@ -6,6 +6,7 @@ import { Star, StarFilled } from '@element-plus/icons-vue'
 import { useToggle } from '@vueuse/core'
 import { useEditionStore } from '@/stores/edition'
 import { convertPage, convertPageRange, validatePageInput, validatePageRange } from '@/utils/converter'
+import MappingTable from '@/components/MappingTable.vue'
 import type { BatchConversionResult, ConvertMode, NearbySuggestion, PageInputType, PrefillConvertData } from '@/types'
 
 const route = useRoute()
@@ -593,14 +594,14 @@ function handleBatchCurrentChange(page: number): void {
     </div>
 
     <div v-if="selectedVolume" class="literary-card mapping-hint">
-      <span class="section-label">本卷页码映射示例（Mock）</span>
-      <el-table :data="selectedVolume.mappings.slice(0, 5)" stripe size="small">
-        <el-table-column prop="modernPage" label="现代页码" width="120" />
-        <el-table-column prop="ancientPage" label="古页码" />
-      </el-table>
+      <MappingTable
+        :mappings="selectedVolume.mappings"
+        :collapsed-count="5"
+        title="本卷页码映射示例"
+      />
       <p class="hint-text">
-        当前共 {{ selectedVolume.mappings.length }} 条映射，
-        <RouterLink to="/mapping" class="hint-link">查看完整映射表 →</RouterLink>
+        需要分页浏览或更复杂查询？
+        <RouterLink to="/mapping" class="hint-link">前往完整映射表页面 →</RouterLink>
       </p>
     </div>
   </div>
