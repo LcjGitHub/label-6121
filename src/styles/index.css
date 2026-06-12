@@ -1,0 +1,104 @@
+:root {
+  --paper-bg: #f7f3eb;
+  --paper-border: #d4c4a8;
+  --ink-primary: #3d3428;
+  --ink-secondary: #6b5d4d;
+  --accent: #8b4513;
+  --card-bg: #fffcf5;
+  --header-bg: #ebe4d4;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'Songti SC', 'SimSun', 'Noto Serif SC', serif;
+  background: var(--paper-bg);
+  color: var(--ink-primary);
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.page-container {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.page-title {
+  margin: 0 0 8px;
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--ink-primary);
+}
+
+.page-subtitle {
+  margin: 0 0 28px;
+  font-size: 0.95rem;
+  color: var(--ink-secondary);
+  letter-spacing: 0.05em;
+}
+
+.literary-card {
+  background: var(--card-bg);
+  border: 1px solid var(--paper-border);
+  border-radius: 4px;
+  padding: 28px 32px;
+  box-shadow: 0 2px 8px rgba(61, 52, 40, 0.06);
+}
+
+.literary-card + .literary-card {
+  margin-top: 20px;
+}
+
+.section-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+  color: var(--ink-secondary);
+  letter-spacing: 0.08em;
+}
+
+.result-box {
+  margin-top: 20px;
+  padding: 16px 20px;
+  background: #f0ebe0;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+}
+
+.result-box .result-label {
+  font-size: 0.8rem;
+  color: var(--ink-secondary);
+  margin-bottom: 4px;
+}
+
+.result-box .result-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.empty-hint {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--ink-secondary);
+}

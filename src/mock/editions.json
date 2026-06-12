@@ -1,0 +1,126 @@
+{
+  "editions": [
+    {
+      "id": "siku-quanshu",
+      "name": "四库全书本",
+      "description": "武英殿聚珍本，影印四库全书本页码体系",
+      "volumes": [
+        {
+          "id": "siku-vol-1",
+          "name": "卷一·经部总序",
+          "mappings": [
+            { "modernPage": 1, "ancientPage": "一之一" },
+            { "modernPage": 2, "ancientPage": "一之二" },
+            { "modernPage": 3, "ancientPage": "一之三" },
+            { "modernPage": 4, "ancientPage": "一之四" },
+            { "modernPage": 5, "ancientPage": "一之五" },
+            { "modernPage": 6, "ancientPage": "二之一" },
+            { "modernPage": 7, "ancientPage": "二之二" },
+            { "modernPage": 8, "ancientPage": "二之三" },
+            { "modernPage": 9, "ancientPage": "三之一" },
+            { "modernPage": 10, "ancientPage": "三之二" },
+            { "modernPage": 11, "ancientPage": "三之三" },
+            { "modernPage": 12, "ancientPage": "四之一" }
+          ]
+        },
+        {
+          "id": "siku-vol-2",
+          "name": "卷二·史部提要",
+          "mappings": [
+            { "modernPage": 1, "ancientPage": "甲一" },
+            { "modernPage": 2, "ancientPage": "甲二" },
+            { "modernPage": 3, "ancientPage": "甲三" },
+            { "modernPage": 4, "ancientPage": "乙一" },
+            { "modernPage": 5, "ancientPage": "乙二" },
+            { "modernPage": 6, "ancientPage": "乙三" },
+            { "modernPage": 7, "ancientPage": "丙一" },
+            { "modernPage": 8, "ancientPage": "丙二" },
+            { "modernPage": 9, "ancientPage": "丙三" },
+            { "modernPage": 10, "ancientPage": "丁一" },
+            { "modernPage": 11, "ancientPage": "丁二" },
+            { "modernPage": 12, "ancientPage": "戊一" }
+          ]
+        },
+        {
+          "id": "siku-vol-3",
+          "name": "卷三·子部存目",
+          "mappings": [
+            { "modernPage": 1, "ancientPage": "001" },
+            { "modernPage": 2, "ancientPage": "002" },
+            { "modernPage": 3, "ancientPage": "003" },
+            { "modernPage": 4, "ancientPage": "004" },
+            { "modernPage": 5, "ancientPage": "005" },
+            { "modernPage": 6, "ancientPage": "006" },
+            { "modernPage": 7, "ancientPage": "007" },
+            { "modernPage": 8, "ancientPage": "008" },
+            { "modernPage": 9, "ancientPage": "009" },
+            { "modernPage": 10, "ancientPage": "010" },
+            { "modernPage": 11, "ancientPage": "011" },
+            { "modernPage": 12, "ancientPage": "012" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zhonghua-dazangjing",
+      "name": "中华大藏经",
+      "description": "中华大藏经对开本分册页码，含梵夹装页序",
+      "volumes": [
+        {
+          "id": "dzj-vol-1",
+          "name": "第一册·序跋",
+          "mappings": [
+            { "modernPage": 1, "ancientPage": "序一" },
+            { "modernPage": 2, "ancientPage": "序二" },
+            { "modernPage": 3, "ancientPage": "序三" },
+            { "modernPage": 4, "ancientPage": "跋一" },
+            { "modernPage": 5, "ancientPage": "跋二" },
+            { "modernPage": 6, "ancientPage": "凡例一" },
+            { "modernPage": 7, "ancientPage": "凡例二" },
+            { "modernPage": 8, "ancientPage": "目录一" },
+            { "modernPage": 9, "ancientPage": "目录二" },
+            { "modernPage": 10, "ancientPage": "目录三" },
+            { "modernPage": 11, "ancientPage": "目录四" },
+            { "modernPage": 12, "ancientPage": "目录五" }
+          ]
+        },
+        {
+          "id": "dzj-vol-2",
+          "name": "第二册·正文上",
+          "mappings": [
+            { "modernPage": 1, "ancientPage": "叶一正面" },
+            { "modernPage": 2, "ancientPage": "叶一背面" },
+            { "modernPage": 3, "ancientPage": "叶二正面" },
+            { "modernPage": 4, "ancientPage": "叶二背面" },
+            { "modernPage": 5, "ancientPage": "叶三正面" },
+            { "modernPage": 6, "ancientPage": "叶三背面" },
+            { "modernPage": 7, "ancientPage": "叶四正面" },
+            { "modernPage": 8, "ancientPage": "叶四背面" },
+            { "modernPage": 9, "ancientPage": "叶五正面" },
+            { "modernPage": 10, "ancientPage": "叶五背面" },
+            { "modernPage": 11, "ancientPage": "叶六正面" },
+            { "modernPage": 12, "ancientPage": "叶六背面" }
+          ]
+        },
+        {
+          "id": "dzj-vol-3",
+          "name": "第三册·正文下",
+          "mappings": [
+            { "modernPage": 1, "ancientPage": "上之一" },
+            { "modernPage": 2, "ancientPage": "上之二" },
+            { "modernPage": 3, "ancientPage": "上之三" },
+            { "modernPage": 4, "ancientPage": "中之一" },
+            { "modernPage": 5, "ancientPage": "中之二" },
+            { "modernPage": 6, "ancientPage": "中之三" },
+            { "modernPage": 7, "ancientPage": "下之一" },
+            { "modernPage": 8, "ancientPage": "下之二" },
+            { "modernPage": 9, "ancientPage": "下之三" },
+            { "modernPage": 10, "ancientPage": "末之一" },
+            { "modernPage": 11, "ancientPage": "末之二" },
+            { "modernPage": 12, "ancientPage": "末之三" }
+          ]
+        }
+      ]
+    }
+  ]
+}
