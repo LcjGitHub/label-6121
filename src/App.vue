@@ -36,6 +36,7 @@ function navigateTo(path: string): void {
           @select="navigateTo"
         >
           <el-menu-item index="/">页码换算</el-menu-item>
+          <el-menu-item index="/mapping">卷册完整映射表</el-menu-item>
           <el-menu-item index="/history">
             对照记录
             <el-badge

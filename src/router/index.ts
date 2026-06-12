@@ -15,6 +15,12 @@ const router = createRouter({
       component: () => import('@/views/HistoryView.vue'),
       meta: { title: '对照记录' },
     },
+    {
+      path: '/mapping',
+      name: 'mapping',
+      component: () => import('@/views/MappingView.vue'),
+      meta: { title: '卷册完整映射表' },
+    },
   ],
 })
 
