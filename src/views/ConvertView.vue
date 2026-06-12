@@ -6,7 +6,7 @@ import { Star, StarFilled } from '@element-plus/icons-vue'
 import { useToggle } from '@vueuse/core'
 import { useEditionStore } from '@/stores/edition'
 import { convertPage, convertPageRange, validatePageInput, validatePageRange } from '@/utils/converter'
-import type { BatchConversionResult, ConvertMode, PageInputType } from '@/types'
+import type { BatchConversionResult, ConvertMode, PageInputType, PrefillConvertData } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -46,7 +46,7 @@ function handleModeChange(): void {
   resetBatchResult()
 }
 
-function sanitizeRouteQuery(editionId: string | undefined, volumeId: string | undefined): {
+function sanitizeRouteQuery(editionId: string | undefined, volumeId: string | undefined, prefill: PrefillConvertData | null): {
   validEdition: string | undefined
   validVolume: string | undefined
   needsUpdate: boolean
@@ -66,10 +66,24 @@ function sanitizeRouteQuery(editionId: string | undefined, volumeId: string | un
   if (volumeId) {
     const volume = editionStore.getVolumeById(editionId, volumeId)
     if (!volume) {
+      if (prefill?.volumeId && prefill.volumeId !== volumeId) {
+        const prefillVolume = editionStore.getVolumeById(editionId, prefill.volumeId)
+        if (prefillVolume) {
+          needsUpdate = true
+          return { validEdition: editionId, validVolume: prefill.volumeId, needsUpdate }
+        }
+      }
       needsUpdate = true
       return { validEdition: editionId, validVolume: undefined, needsUpdate }
     }
     return { validEdition: editionId, validVolume: volumeId, needsUpdate }
+  }
+
+  if (prefill?.volumeId) {
+    const prefillVolume = editionStore.getVolumeById(editionId, prefill.volumeId)
+    if (prefillVolume) {
+      return { validEdition: editionId, validVolume: prefill.volumeId, needsUpdate }
+    }
   }
 
   return { validEdition: editionId, validVolume: undefined, needsUpdate }
@@ -78,10 +92,12 @@ function sanitizeRouteQuery(editionId: string | undefined, volumeId: string | un
 function applyRouteQuery(): void {
   if (isUpdatingQuery) return
 
+  const prefill = editionStore.consumePrefillData()
+
   const queryEdition = route.query.edition as string | undefined
   const queryVolume = route.query.volume as string | undefined
 
-  const { validEdition, validVolume, needsUpdate } = sanitizeRouteQuery(queryEdition, queryVolume)
+  const { validEdition, validVolume, needsUpdate } = sanitizeRouteQuery(queryEdition, queryVolume, prefill)
 
   if (validEdition) {
     editionStore.selectedEditionId = validEdition
@@ -90,13 +106,22 @@ function applyRouteQuery(): void {
     } else {
       editionStore.syncVolumeOnEditionChange()
     }
+  } else {
+    editionStore.initSelection()
+  }
+
+  if (prefill) {
+    inputType.value = prefill.inputType
+    inputValue.value = prefill.inputValue
+    convertMode.value = 'single'
+    resetResult()
+    resetBatchResult()
+  } else {
     inputValue.value = ''
     startPage.value = ''
     endPage.value = ''
     resetResult()
     resetBatchResult()
-  } else {
-    editionStore.initSelection()
   }
 
   if (needsUpdate || (validEdition && !validVolume)) {
@@ -118,15 +143,6 @@ function applyRouteQuery(): void {
 }
 
 applyRouteQuery()
-
-const prefill = editionStore.consumePrefillData()
-if (prefill) {
-  inputType.value = prefill.inputType
-  inputValue.value = prefill.inputValue
-  convertMode.value = 'single'
-  resetResult()
-  resetBatchResult()
-}
 
 watch(
   () => [route.query.edition, route.query.volume],

@@ -72,8 +72,6 @@ function handleReconvert(record: ConversionRecord): void {
       edition: record.editionId,
       volume: record.volumeId,
     },
-  }).catch((err) => {
-    if (err.name !== 'NavigationDuplicated') throw err
   })
 }
 
