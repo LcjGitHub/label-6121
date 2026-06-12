@@ -3,6 +3,18 @@ import type { ConversionRecord, MappingBackup } from '@/types'
 
 const BACKUP_VERSION = '1.0'
 
+const REQUIRED_RECORD_FIELDS: Array<keyof ConversionRecord> = [
+  'id',
+  'editionId',
+  'editionName',
+  'volumeId',
+  'volumeName',
+  'inputType',
+  'inputValue',
+  'outputValue',
+  'createdAt',
+]
+
 export function serializeBackup(records: ConversionRecord[]): string {
   const backup: MappingBackup = {
     meta: {
@@ -20,7 +32,8 @@ export function triggerDownload(jsonStr: string, filename?: string): void {
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
-  anchor.download = filename ?? `mapping-backup-${dayjs().format('YYYYMMDD-HHmmss')}.json`
+  anchor.download =
+    filename ?? `对照记录备份-${dayjs().format('YYYYMMDD-HHmmss')}.json`
   document.body.appendChild(anchor)
   anchor.click()
   document.body.removeChild(anchor)
@@ -28,26 +41,54 @@ export function triggerDownload(jsonStr: string, filename?: string): void {
 }
 
 export function parseBackupFile(text: string): MappingBackup {
-  const parsed = JSON.parse(text)
-  if (!parsed.meta || !parsed.records || !Array.isArray(parsed.records)) {
-    throw new Error('备份文件格式不正确：缺少 meta 或 records 字段')
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    throw new Error('备份文件格式不正确，无法解析')
   }
-  if (typeof parsed.meta.version !== 'string' || typeof parsed.meta.exportedAt !== 'string') {
-    throw new Error('备份文件元信息不完整')
+  if (
+    !parsed ||
+    typeof parsed !== 'object' ||
+    !('meta' in parsed) ||
+    !('records' in parsed) ||
+    !Array.isArray((parsed as MappingBackup).records)
+  ) {
+    throw new Error('备份文件格式不正确，无法解析')
   }
-  for (const rec of parsed.records as ConversionRecord[]) {
-    if (!rec.id || !rec.editionId || !rec.createdAt) {
-      throw new Error('备份文件中包含无效的对照记录')
+  const backup = parsed as MappingBackup
+  if (
+    typeof backup.meta.version !== 'string' ||
+    typeof backup.meta.exportedAt !== 'string'
+  ) {
+    throw new Error('备份文件格式不正确，无法解析')
+  }
+  for (let i = 0; i < backup.records.length; i++) {
+    const rec = backup.records[i]
+    for (const field of REQUIRED_RECORD_FIELDS) {
+      if (!rec[field]) {
+        throw new Error(
+          `第 ${i + 1} 条记录缺少必填字段「${field}」，备份文件格式不正确`,
+        )
+      }
     }
   }
-  return parsed as MappingBackup
+  return backup
+}
+
+export interface MergeResult {
+  records: ConversionRecord[]
+  added: number
+  updated: number
 }
 
 export function mergeRecords(
   existing: ConversionRecord[],
   incoming: ConversionRecord[],
-): ConversionRecord[] {
+): MergeResult {
   const map = new Map<string, ConversionRecord>()
+  let added = 0
+  let updated = 0
   for (const rec of existing) {
     map.set(rec.id, rec)
   }
@@ -55,13 +96,15 @@ export function mergeRecords(
     const prev = map.get(rec.id)
     if (!prev) {
       map.set(rec.id, rec)
+      added++
     } else {
       const prevTime = dayjs(prev.createdAt).valueOf()
       const incomingTime = dayjs(rec.createdAt).valueOf()
       if (incomingTime > prevTime) {
         map.set(rec.id, rec)
+        updated++
       }
     }
   }
-  return Array.from(map.values())
+  return { records: Array.from(map.values()), added, updated }
 }

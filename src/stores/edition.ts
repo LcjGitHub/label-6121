@@ -97,11 +97,9 @@ export const useEditionStore = defineStore(
 
     function importRecords(fileContent: string): { added: number; updated: number; total: number } {
       const backup: MappingBackup = parseBackupFile(fileContent)
-      const incomingIds = new Set(backup.records.map((r) => r.id))
-      const updatedCount = records.value.filter((r) => incomingIds.has(r.id)).length
-      const addedCount = backup.records.length - updatedCount
-      records.value = mergeRecords(records.value, backup.records)
-      return { added: addedCount, updated: updatedCount, total: records.value.length }
+      const result = mergeRecords(records.value, backup.records)
+      records.value = result.records
+      return { added: result.added, updated: result.updated, total: records.value.length }
     }
 
     return {
