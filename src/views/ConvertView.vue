@@ -8,8 +8,16 @@ import type { PageInputType } from '@/types'
 
 const editionStore = useEditionStore()
 
-const editionId = ref('')
-const volumeId = ref('')
+editionStore.initSelection()
+
+const editionId = computed({
+  get: () => editionStore.selectedEditionId,
+  set: (val: string) => { editionStore.selectedEditionId = val },
+})
+const volumeId = computed({
+  get: () => editionStore.selectedVolumeId,
+  set: (val: string) => { editionStore.selectedVolumeId = val },
+})
 const inputType = ref<PageInputType>('modern')
 const inputValue = ref('')
 const outputValue = ref('')
@@ -42,17 +50,8 @@ const outputLabel = computed(() =>
 
 const hasResult = computed(() => Boolean(outputValue.value))
 
-/** 初始化默认选中第一项 */
-function initDefaults(): void {
-  const firstEdition = editionStore.editions[0]
-  if (!firstEdition) return
-  editionId.value = firstEdition.id
-  volumeId.value = firstEdition.volumes[0]?.id ?? ''
-}
-
-watch(editionId, (newId) => {
-  const edition = editionStore.getEditionById(newId)
-  volumeId.value = edition?.volumes[0]?.id ?? ''
+watch(editionId, () => {
+  editionStore.syncVolumeOnEditionChange()
   resetResult()
 })
 
@@ -60,9 +59,6 @@ watch([inputType, volumeId], () => {
   resetResult()
 })
 
-/**
- * 清空换算结果
- */
 function resetResult(): void {
   outputValue.value = ''
   errorMessage.value = ''
@@ -149,8 +145,6 @@ function handleReset(): void {
   inputValue.value = ''
   resetResult()
 }
-
-initDefaults()
 </script>
 
 <template>
@@ -248,7 +242,10 @@ initDefaults()
         <el-table-column prop="modernPage" label="现代页码" width="120" />
         <el-table-column prop="ancientPage" label="古页码" />
       </el-table>
-      <p class="hint-text">完整映射表后续版本可展开查看，当前共 {{ selectedVolume.mappings.length }} 条</p>
+      <p class="hint-text">
+        当前共 {{ selectedVolume.mappings.length }} 条映射，
+        <RouterLink to="/mapping" class="hint-link">查看完整映射表 →</RouterLink>
+      </p>
     </div>
   </div>
 </template>
@@ -276,5 +273,14 @@ initDefaults()
   margin: 12px 0 0;
   font-size: 0.8rem;
   color: var(--ink-secondary);
+}
+
+.hint-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.hint-link:hover {
+  text-decoration: underline;
 }
 </style>

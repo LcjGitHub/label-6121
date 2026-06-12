@@ -12,6 +12,8 @@ export const useEditionStore = defineStore(
   () => {
     const editions = ref<Edition[]>(editionsData.editions)
     const records = ref<ConversionRecord[]>([])
+    const selectedEditionId = ref('')
+    const selectedVolumeId = ref('')
 
     const sortedRecords = computed(() =>
       [...records.value].sort(
@@ -71,15 +73,35 @@ export const useEditionStore = defineStore(
       records.value = []
     }
 
+    function initSelection(): void {
+      if (selectedEditionId.value) return
+      const firstEdition = editions.value[0]
+      if (!firstEdition) return
+      selectedEditionId.value = firstEdition.id
+      selectedVolumeId.value = firstEdition.volumes[0]?.id ?? ''
+    }
+
+    function syncVolumeOnEditionChange(): void {
+      const edition = getEditionById(selectedEditionId.value)
+      const volumeExists = edition?.volumes.some((v) => v.id === selectedVolumeId.value)
+      if (!volumeExists) {
+        selectedVolumeId.value = edition?.volumes[0]?.id ?? ''
+      }
+    }
+
     return {
       editions,
       records,
+      selectedEditionId,
+      selectedVolumeId,
       sortedRecords,
       getEditionById,
       getVolumeById,
       addRecord,
       removeRecord,
       clearRecords,
+      initSelection,
+      syncVolumeOnEditionChange,
     }
   },
   {

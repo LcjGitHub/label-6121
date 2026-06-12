@@ -4,8 +4,16 @@ import { useEditionStore } from '@/stores/edition'
 
 const editionStore = useEditionStore()
 
-const editionId = ref('')
-const volumeId = ref('')
+editionStore.initSelection()
+
+const editionId = computed({
+  get: () => editionStore.selectedEditionId,
+  set: (val: string) => { editionStore.selectedEditionId = val },
+})
+const volumeId = computed({
+  get: () => editionStore.selectedVolumeId,
+  set: (val: string) => { editionStore.selectedVolumeId = val },
+})
 const currentPage = ref(1)
 const pageSize = ref(10)
 
@@ -33,16 +41,10 @@ const paginatedMappings = computed(() => {
 
 const totalCount = computed(() => selectedVolume.value?.mappings.length ?? 0)
 
-function initDefaults(): void {
-  const firstEdition = editionStore.editions[0]
-  if (!firstEdition) return
-  editionId.value = firstEdition.id
-  volumeId.value = firstEdition.volumes[0]?.id ?? ''
-}
+const hasData = computed(() => editionStore.editions.length > 0)
 
-watch(editionId, (newId) => {
-  const edition = editionStore.getEditionById(newId)
-  volumeId.value = edition?.volumes[0]?.id ?? ''
+watch(editionId, () => {
+  editionStore.syncVolumeOnEditionChange()
   currentPage.value = 1
 })
 
@@ -53,8 +55,6 @@ watch(volumeId, () => {
 function handleCurrentChange(page: number): void {
   currentPage.value = page
 }
-
-initDefaults()
 </script>
 
 <template>
@@ -64,55 +64,52 @@ initDefaults()
       选择古籍版本与卷册，浏览该卷全部现代页码与古页码的完整对照关系
     </p>
 
-    <div class="literary-card">
-      <el-form label-position="top">
-        <el-row :gutter="20">
-          <el-col :xs="24" :sm="12">
-            <el-form-item label="古籍版本">
-              <el-select
-                v-model="editionId"
-                placeholder="请选择版本"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="opt in editionOptions"
-                  :key="opt.value"
-                  :label="opt.label"
-                  :value="opt.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="12">
-            <el-form-item label="卷册">
-              <el-select
-                v-model="volumeId"
-                placeholder="请选择卷册"
-                style="width: 100%"
-                :disabled="!editionId"
-              >
-                <el-option
-                  v-for="opt in volumeOptions"
-                  :key="opt.value"
-                  :label="opt.label"
-                  :value="opt.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-
+    <div class="literary-card filter-card">
+      <el-row :gutter="16" align="middle">
+        <el-col :xs="24" :sm="8">
+          <el-select
+            v-model="editionId"
+            placeholder="请选择版本"
+            style="width: 100%"
+            size="default"
+          >
+            <el-option
+              v-for="opt in editionOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+        </el-col>
+        <el-col :xs="24" :sm="8">
+          <el-select
+            v-model="volumeId"
+            placeholder="请选择卷册"
+            style="width: 100%"
+            :disabled="!editionId"
+            size="default"
+          >
+            <el-option
+              v-for="opt in volumeOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+        </el-col>
+        <el-col :xs="24" :sm="8">
+          <span v-if="selectedVolume" class="volume-summary">
+            {{ selectedVolume.name }} · 共 {{ totalCount }} 条映射
+          </span>
+        </el-col>
+      </el-row>
       <p v-if="selectedEdition" class="edition-desc">
         {{ selectedEdition.description }}
       </p>
     </div>
 
-    <div v-if="selectedVolume" class="literary-card">
-      <span class="section-label">
-        {{ selectedVolume.name }} · 共 {{ totalCount }} 条映射
-      </span>
-      <el-table :data="paginatedMappings" stripe style="width: 100%" size="default">
+    <div v-if="hasData" class="literary-card">
+      <el-table :data="paginatedMappings" stripe style="width: 100%" size="small">
         <el-table-column
           type="index"
           label="序号"
@@ -120,7 +117,7 @@ initDefaults()
           align="center"
           :index="(index: number) => (currentPage - 1) * pageSize + index + 1"
         />
-        <el-table-column prop="modernPage" label="现代页码" width="160" align="center" />
+        <el-table-column prop="modernPage" label="现代页码" width="120" align="center" />
         <el-table-column prop="ancientPage" label="古页码" align="center" />
       </el-table>
 
@@ -139,16 +136,28 @@ initDefaults()
 
     <div v-else class="literary-card">
       <div class="empty-hint">
-        <p>请先选择古籍版本与卷册</p>
+        <p>暂无古籍数据</p>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.filter-card {
+  padding: 16px 24px;
+}
+
+.volume-summary {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--ink-secondary);
+  letter-spacing: 0.04em;
+  line-height: 32px;
+}
+
 .edition-desc {
-  margin: -8px 0 0;
-  padding: 10px 14px;
+  margin: 8px 0 0;
+  padding: 8px 14px;
   background: #f0ebe0;
   border-radius: 4px;
   font-size: 0.875rem;
@@ -159,7 +168,7 @@ initDefaults()
 .pagination-wrapper {
   display: flex;
   justify-content: center;
-  margin-top: 24px;
+  margin-top: 16px;
 }
 
 .pagination-wrapper :deep(.el-pagination.is-background .el-pager li:not(.is-active).is-hover) {
