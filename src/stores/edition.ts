@@ -15,6 +15,9 @@ export const useEditionStore = defineStore(
     const records = ref<ConversionRecord[]>([])
     const selectedEditionId = ref('')
     const selectedVolumeId = ref('')
+    const favoriteEditionIds = ref<string[]>([])
+
+    const favoriteCount = computed(() => favoriteEditionIds.value.length)
 
     const sortedRecords = computed(() =>
       [...records.value].sort(
@@ -38,6 +41,48 @@ export const useEditionStore = defineStore(
     function getVolumeById(editionId: string, volumeId: string): Volume | undefined {
       const edition = getEditionById(editionId)
       return edition?.volumes.find((v) => v.id === volumeId)
+    }
+
+    function isFavoriteEdition(editionId: string): boolean {
+      return favoriteEditionIds.value.includes(editionId)
+    }
+
+    function addFavoriteEdition(editionId: string): void {
+      if (!favoriteEditionIds.value.includes(editionId)) {
+        favoriteEditionIds.value.push(editionId)
+      }
+    }
+
+    function removeFavoriteEdition(editionId: string): void {
+      favoriteEditionIds.value = favoriteEditionIds.value.filter((id) => id !== editionId)
+    }
+
+    function toggleFavoriteEdition(editionId: string): void {
+      if (isFavoriteEdition(editionId)) {
+        removeFavoriteEdition(editionId)
+      } else {
+        addFavoriteEdition(editionId)
+      }
+    }
+
+    function getSortedEditionsWithFavorite(): Array<{
+      id: string
+      name: string
+      description: string
+      isFavorite: boolean
+    }> {
+      const result = editions.value.map((e) => ({
+        id: e.id,
+        name: e.name,
+        description: e.description,
+        isFavorite: isFavoriteEdition(e.id),
+      }))
+      result.sort((a, b) => {
+        if (a.isFavorite && !b.isFavorite) return -1
+        if (!a.isFavorite && b.isFavorite) return 1
+        return 0
+      })
+      return result
     }
 
     /**
@@ -107,9 +152,16 @@ export const useEditionStore = defineStore(
       records,
       selectedEditionId,
       selectedVolumeId,
+      favoriteEditionIds,
+      favoriteCount,
       sortedRecords,
       getEditionById,
       getVolumeById,
+      isFavoriteEdition,
+      addFavoriteEdition,
+      removeFavoriteEdition,
+      toggleFavoriteEdition,
+      getSortedEditionsWithFavorite,
       addRecord,
       removeRecord,
       clearRecords,
@@ -121,7 +173,7 @@ export const useEditionStore = defineStore(
   },
   {
     persist: {
-      paths: ['records'],
+      paths: ['records', 'favoriteEditionIds'],
     },
   },
 )

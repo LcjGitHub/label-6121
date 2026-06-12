@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { Star } from '@element-plus/icons-vue'
 import { useEditionStore } from '@/stores/edition'
 
 const editionStore = useEditionStore()
@@ -18,8 +19,23 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 
 const editionOptions = computed(() =>
-  editionStore.editions.map((e) => ({ label: e.name, value: e.id })),
+  editionStore.getSortedEditionsWithFavorite().map((e) => ({
+    label: e.name,
+    value: e.id,
+    isFavorite: e.isFavorite,
+  })),
 )
+
+const isCurrentFavorite = computed(() =>
+  editionId.value ? editionStore.isFavoriteEdition(editionId.value) : false,
+)
+
+const favoriteCount = computed(() => editionStore.favoriteCount)
+
+function handleToggleFavorite(): void {
+  if (!editionId.value) return
+  editionStore.toggleFavoriteEdition(editionId.value)
+}
 
 const volumeOptions = computed(() => {
   const edition = editionStore.getEditionById(editionId.value)
@@ -67,19 +83,49 @@ function handleCurrentChange(page: number): void {
     <div class="literary-card filter-card">
       <el-row :gutter="16" align="middle">
         <el-col :xs="24" :sm="8">
-          <el-select
-            v-model="editionId"
-            placeholder="请选择版本"
-            style="width: 100%"
-            size="default"
-          >
-            <el-option
-              v-for="opt in editionOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
+          <div class="edition-select-wrapper">
+            <el-select
+              v-model="editionId"
+              placeholder="请选择版本"
+              style="width: 100%"
+              size="default"
+            >
+              <el-option
+                v-for="opt in editionOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              >
+                <div class="option-content">
+                  <span class="option-label">{{ opt.label }}</span>
+                  <el-icon
+                    v-if="opt.isFavorite"
+                    class="star-icon favorite"
+                    :size="14"
+                  >
+                    <Star />
+                  </el-icon>
+                </div>
+              </el-option>
+            </el-select>
+            <el-tooltip
+              :content="isCurrentFavorite ? '取消收藏此版本' : '收藏此版本'"
+              placement="top"
+            >
+              <el-button
+                class="favorite-btn"
+                :type="isCurrentFavorite ? 'warning' : 'default'"
+                :icon="isCurrentFavorite ? Star : Star"
+                circle
+                size="default"
+                :disabled="!editionId"
+                @click="handleToggleFavorite"
+              />
+            </el-tooltip>
+          </div>
+          <div v-if="favoriteCount > 0" class="favorite-hint">
+            已收藏 {{ favoriteCount }} 个常用版本
+          </div>
         </el-col>
         <el-col :xs="24" :sm="8">
           <el-select
@@ -143,6 +189,47 @@ function handleCurrentChange(page: number): void {
 </template>
 
 <style scoped>
+.edition-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edition-select-wrapper :deep(.el-select) {
+  flex: 1;
+}
+
+.favorite-btn {
+  flex-shrink: 0;
+}
+
+.option-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.option-label {
+  flex: 1;
+}
+
+.star-icon {
+  flex-shrink: 0;
+}
+
+.star-icon.favorite {
+  color: #f59e0b;
+  fill: #f59e0b;
+}
+
+.favorite-hint {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--ink-secondary);
+  letter-spacing: 0.03em;
+}
+
 .filter-card {
   padding: 16px 24px;
 }

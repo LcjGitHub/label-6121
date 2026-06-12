@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { Star } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEditionStore } from '@/stores/edition'
 
@@ -10,6 +11,7 @@ const editionStore = useEditionStore()
 const activeMenu = computed(() => route.path)
 
 const recordCount = computed(() => editionStore.records.length)
+const favoriteCount = computed(() => editionStore.favoriteCount)
 
 /**
  * 导航至指定路径
@@ -28,25 +30,39 @@ function navigateTo(path: string): void {
           <span class="brand-mark">📜</span>
           <span class="brand-text">古籍页码对照器</span>
         </div>
-        <el-menu
-          :default-active="activeMenu"
-          mode="horizontal"
-          class="nav-menu"
-          :ellipsis="false"
-          @select="navigateTo"
-        >
-          <el-menu-item index="/">页码换算</el-menu-item>
-          <el-menu-item index="/mapping">卷册完整映射表</el-menu-item>
-          <el-menu-item index="/history">
-            对照记录
-            <el-badge
-              v-if="recordCount > 0"
-              :value="recordCount"
-              :max="99"
-              class="record-badge"
-            />
-          </el-menu-item>
-        </el-menu>
+        <div class="nav-area">
+          <el-menu
+            :default-active="activeMenu"
+            mode="horizontal"
+            class="nav-menu"
+            :ellipsis="false"
+            @select="navigateTo"
+          >
+            <el-menu-item index="/">页码换算</el-menu-item>
+            <el-menu-item index="/mapping">卷册完整映射表</el-menu-item>
+            <el-menu-item index="/history">
+              对照记录
+              <el-badge
+                v-if="recordCount > 0"
+                :value="recordCount"
+                :max="99"
+                class="record-badge"
+              />
+            </el-menu-item>
+          </el-menu>
+          <el-tooltip
+            v-if="favoriteCount > 0"
+            :content="`已收藏 ${favoriteCount} 个常用版本`"
+            placement="bottom"
+          >
+            <div class="favorite-indicator">
+              <el-icon :size="16" class="favorite-star">
+                <Star />
+              </el-icon>
+              <el-badge :value="favoriteCount" :max="99" class="favorite-badge" />
+            </div>
+          </el-tooltip>
+        </div>
       </div>
     </el-header>
 
@@ -101,10 +117,41 @@ function navigateTo(path: string): void {
   color: var(--ink-primary);
 }
 
+.nav-area {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 0 0 auto;
+}
+
 .nav-menu {
   background: transparent;
   border-bottom: none;
   flex: 0 0 auto;
+}
+
+.favorite-indicator {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.1);
+  cursor: default;
+}
+
+.favorite-star {
+  color: #f59e0b;
+  fill: #f59e0b;
+}
+
+.favorite-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  transform: translate(50%, -50%);
 }
 
 .nav-menu :deep(.el-menu-item) {
