@@ -267,6 +267,7 @@ function handleConvert(): void {
   if (validationError) {
     errorMessage.value = validationError
     outputValue.value = ''
+    suggestions.value = []
     ElMessage.error(validationError)
     return
   }
@@ -335,6 +336,7 @@ function handleBatchConvert(): void {
   if (validationError) {
     errorMessage.value = validationError
     batchResult.value = null
+    suggestions.value = []
     ElMessage.error(validationError)
     return
   }

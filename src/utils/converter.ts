@@ -47,10 +47,119 @@ export function validatePageInput(type: PageInputType, value: string): string | 
   return type === 'modern' ? validateModernPage(value) : validateAncientPage(value)
 }
 
+/** 中文数字字符到数值的映射 */
+const CHINESE_DIGIT_MAP: Record<string, number> = {
+  '零': 0, '〇': 0, '○': 0,
+  '一': 1, '二': 2, '两': 2, '三': 3, '四': 4,
+  '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
+  '十': 10, '百': 100, '千': 1000, '万': 10000,
+}
+
+/** 天干地支等常见古籍序号字符 */
+const HEAVENLY_STEMS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸']
+const EARTHLY_BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
+
+/**
+ * 解析单个中文数字或序号字符为数值
+ * @param ch - 单个字符
+ */
+function parseChineseChar(ch: string): number | null {
+  if (CHINESE_DIGIT_MAP[ch] !== undefined) return CHINESE_DIGIT_MAP[ch]
+  const stemIdx = HEAVENLY_STEMS.indexOf(ch)
+  if (stemIdx !== -1) return stemIdx + 1
+  const branchIdx = EARTHLY_BRANCHES.indexOf(ch)
+  if (branchIdx !== -1) return branchIdx + 1
+  return null
+}
+
+/**
+ * 将古页码字符串解析为可比较的数值键数组
+ * 按段解析：中文数字段转为数值，阿拉伯数字段转为数值，其他字符保留
+ * @param page - 古页码字符串
+ */
+function parseAncientPageKey(page: string): Array<number | string> {
+  const result: Array<number | string> = []
+  let i = 0
+  while (i < page.length) {
+    const ch = page[i]
+    // 阿拉伯数字段
+    if (/[0-9]/.test(ch)) {
+      let numStr = ''
+      while (i < page.length && /[0-9]/.test(page[i])) {
+        numStr += page[i]
+        i++
+      }
+      result.push(Number(numStr))
+      continue
+    }
+    // 中文字段
+    const chineseNum = parseChineseChar(ch)
+    if (chineseNum !== null) {
+      let total = 0
+      let current = 0
+      let section = 0
+      let j = i
+      while (j < page.length) {
+        const val = parseChineseChar(page[j])
+        if (val === null) break
+        if (val >= 10) {
+          if (current === 0) current = 1
+          section += current * val
+          current = 0
+        } else {
+          current = val
+        }
+        j++
+      }
+      total = section + current
+      if (total > 0) {
+        result.push(total)
+        i = j
+        continue
+      }
+    }
+    // 普通字符
+    result.push(ch)
+    i++
+  }
+  return result
+}
+
+/**
+ * 比较两个古页码的键数组，支持数值和字符串混合比较
+ */
+function compareAncientKeys(a: Array<number | string>, b: Array<number | string>): number {
+  const len = Math.max(a.length, b.length)
+  for (let i = 0; i < len; i++) {
+    const av = a[i]
+    const bv = b[i]
+    if (av === undefined) return -1
+    if (bv === undefined) return 1
+    if (typeof av === 'number' && typeof bv === 'number') {
+      if (av !== bv) return av - bv
+    } else {
+      const as = String(av)
+      const bs = String(bv)
+      if (as !== bs) return as < bs ? -1 : 1
+    }
+  }
+  return 0
+}
+
+/**
+ * 比较两个古页码字符串（基于中文数字语义顺序）
+ * @param a - 古页码 A
+ * @param b - 古页码 B
+ */
+function compareAncientPages(a: string, b: string): number {
+  return compareAncientKeys(parseAncientPageKey(a), parseAncientPageKey(b))
+}
+
 /**
  * 在映射表中查找与输入最接近的三条对照建议
- * 现代页码按数值距离排序，古页码按字典序定位后取邻近条目
- * @param mappings - 页码映射表
+ * 现代页码按数值距离排序（距离相同时按现代页码升序），
+ * 古页码在原映射表顺序（按现代页码从小到大）中定位插入位置，取前后相邻条目
+ * @param mappings - 页码映射表（按现代页码从小到大排列）
  * @param inputType - 输入类型
  * @param inputValue - 输入值
  */
@@ -63,9 +172,12 @@ export function findNearbySuggestions(
 
   if (inputType === 'modern') {
     const num = Number(inputValue.trim())
-    const sorted = [...mappings].sort(
-      (a, b) => Math.abs(a.modernPage - num) - Math.abs(b.modernPage - num),
-    )
+    const sorted = [...mappings].sort((a, b) => {
+      const distA = Math.abs(a.modernPage - num)
+      const distB = Math.abs(b.modernPage - num)
+      if (distA !== distB) return distA - distB
+      return a.modernPage - b.modernPage
+    })
     return sorted.slice(0, 3).map((m) => ({
       modernPage: m.modernPage,
       ancientPage: m.ancientPage,
@@ -73,16 +185,13 @@ export function findNearbySuggestions(
   }
 
   const trimmed = inputValue.trim()
-  const sorted = [...mappings].sort((a, b) =>
-    a.ancientPage.localeCompare(b.ancientPage, 'zh-CN'),
-  )
-  let insertIdx = sorted.findIndex((m) => m.ancientPage.localeCompare(trimmed, 'zh-CN') >= 0)
-  if (insertIdx === -1) insertIdx = sorted.length
+  let insertIdx = mappings.findIndex((m) => compareAncientPages(m.ancientPage, trimmed) >= 0)
+  if (insertIdx === -1) insertIdx = mappings.length
 
   const start = Math.max(0, insertIdx - 1)
-  const end = Math.min(sorted.length, start + 3)
+  const end = Math.min(mappings.length, start + 3)
   const adjustedStart = Math.max(0, end - 3)
-  return sorted.slice(adjustedStart, end).map((m) => ({
+  return mappings.slice(adjustedStart, end).map((m) => ({
     modernPage: m.modernPage,
     ancientPage: m.ancientPage,
   }))
