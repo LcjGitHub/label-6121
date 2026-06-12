@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Star, StarFilled, CaretRight, CaretBottom, Document } from '@element-plus/icons-vue'
 import { useEditionStore } from '@/stores/edition'
-import type { Volume } from '@/types'
 
 const router = useRouter()
 const editionStore = useEditionStore()
@@ -22,6 +21,10 @@ function isExpanded(editionId: string): boolean {
   return expandedEditions.value.has(editionId)
 }
 
+function getVolumeAriaLabel(editionName: string, volumeName: string, volumeDesc: string): string {
+  return `${editionName}，${volumeName}，${volumeDesc}。点击可跳转至页码换算。`
+}
+
 function handleVolumeClick(editionId: string, volumeId: string): void {
   editionStore.selectedEditionId = editionId
   editionStore.selectedVolumeId = volumeId
@@ -31,21 +34,8 @@ function handleVolumeClick(editionId: string, volumeId: string): void {
   })
 }
 
-function handleVolumeKeydown(event: KeyboardEvent, editionId: string, volumeId: string): void {
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault()
-    handleVolumeClick(editionId, volumeId)
-  }
-}
-
-function handleToggleFavorite(editionId: string, event: Event): void {
-  event.stopPropagation()
+function handleToggleFavorite(editionId: string): void {
   editionStore.toggleFavoriteEdition(editionId)
-}
-
-function getVolumeSummary(volume: Volume): string {
-  const count = volume.mappings.length
-  return `${count} 条映射`
 }
 
 function expandAll(): void {
@@ -55,6 +45,8 @@ function expandAll(): void {
 function collapseAll(): void {
   expandedEditions.value.clear()
 }
+
+const sortedEditions = computed(() => editionStore.getSortedEditionsWithFavorite())
 </script>
 
 <template>
@@ -70,22 +62,20 @@ function collapseAll(): void {
       </div>
     </div>
 
-    <div v-if="editionStore.editions.length > 0" class="catalog-list">
+    <div v-if="sortedEditions.length > 0" class="catalog-list">
       <section
-        v-for="edition in editionStore.getSortedEditionsWithFavorite()"
+        v-for="edition in sortedEditions"
         :key="edition.id"
         class="edition-card literary-card"
       >
-        <header
-          class="edition-header"
-          role="button"
-          tabindex="0"
-          :aria-expanded="isExpanded(edition.id)"
-          @click="toggleEdition(edition.id)"
-          @keydown.enter="toggleEdition(edition.id)"
-          @keydown.space.prevent="toggleEdition(edition.id)"
-        >
-          <div class="edition-main-info">
+        <div class="edition-header-row">
+          <button
+            type="button"
+            class="edition-toggle"
+            :aria-expanded="isExpanded(edition.id)"
+            :aria-controls="`edition-content-${edition.id}`"
+            @click="toggleEdition(edition.id)"
+          >
             <el-icon class="expand-icon" :size="16" aria-hidden="true">
               <component :is="isExpanded(edition.id) ? CaretBottom : CaretRight" />
             </el-icon>
@@ -103,7 +93,7 @@ function collapseAll(): void {
               </h3>
               <p class="edition-desc">{{ edition.description }}</p>
             </div>
-          </div>
+          </button>
           <div class="edition-actions">
             <el-tooltip
               :content="edition.isFavorite ? '取消收藏此版本' : '收藏此版本'"
@@ -115,14 +105,15 @@ function collapseAll(): void {
                 :aria-label="edition.isFavorite ? '取消收藏此版本' : '收藏此版本'"
                 circle
                 size="small"
-                @click="handleToggleFavorite(edition.id, $event)"
+                @click="handleToggleFavorite(edition.id)"
               />
             </el-tooltip>
           </div>
-        </header>
+        </div>
 
         <ul
           v-show="isExpanded(edition.id)"
+          :id="`edition-content-${edition.id}`"
           class="volume-list"
           role="list"
         >
@@ -134,8 +125,8 @@ function collapseAll(): void {
             <button
               type="button"
               class="volume-item"
+              :aria-label="getVolumeAriaLabel(edition.name, volume.name, volume.description)"
               @click="handleVolumeClick(edition.id, volume.id)"
-              @keydown="handleVolumeKeydown($event, edition.id, volume.id)"
             >
               <el-icon class="volume-icon" :size="18" aria-hidden="true">
                 <Document />
@@ -143,7 +134,6 @@ function collapseAll(): void {
               <div class="volume-info">
                 <div class="volume-name">{{ volume.name }}</div>
                 <div class="volume-desc">{{ volume.description }}</div>
-                <div class="volume-meta">{{ getVolumeSummary(volume) }}</div>
               </div>
               <el-icon class="arrow-icon" :size="16" aria-hidden="true">
                 <CaretRight />
@@ -194,36 +184,41 @@ function collapseAll(): void {
   overflow: hidden;
 }
 
-.edition-header {
+.edition-header-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 20px 24px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  outline: none;
+  gap: 12px;
 }
 
-.edition-header:hover,
-.edition-header:focus-visible {
-  background-color: rgba(139, 90, 43, 0.04);
-}
-
-.edition-header:focus-visible {
-  box-shadow: inset 0 0 0 2px var(--accent);
-}
-
-.edition-main-info {
+.edition-toggle {
   display: flex;
   align-items: flex-start;
   gap: 12px;
   flex: 1;
+  padding: 20px 0 20px 24px;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: background-color 0.2s ease;
+  outline: none;
+}
+
+.edition-toggle:hover,
+.edition-toggle:focus-visible {
+  background-color: rgba(139, 90, 43, 0.04);
+}
+
+.edition-toggle:focus-visible {
+  box-shadow: inset 3px 0 0 0 var(--accent);
 }
 
 .expand-icon {
   color: var(--ink-secondary);
   margin-top: 4px;
-  transition: transform 0.2s ease;
   flex-shrink: 0;
 }
 
@@ -257,7 +252,7 @@ function collapseAll(): void {
 
 .edition-actions {
   flex-shrink: 0;
-  margin-left: 16px;
+  padding: 20px 24px 20px 0;
 }
 
 .volume-list {
@@ -311,20 +306,13 @@ function collapseAll(): void {
   font-size: 0.95rem;
   font-weight: 500;
   color: var(--ink-primary);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .volume-desc {
   font-size: 0.82rem;
   color: var(--ink-secondary);
   line-height: 1.5;
-  margin-bottom: 4px;
-}
-
-.volume-meta {
-  font-size: 0.75rem;
-  color: var(--ink-tertiary, #999);
-  letter-spacing: 0.03em;
 }
 
 .arrow-icon {
@@ -354,8 +342,12 @@ function collapseAll(): void {
 }
 
 @media (max-width: 640px) {
-  .edition-header {
-    padding: 16px;
+  .edition-toggle {
+    padding: 16px 0 16px 16px;
+  }
+
+  .edition-actions {
+    padding: 16px 16px 16px 0;
   }
 
   .volume-item {
