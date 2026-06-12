@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Star } from '@element-plus/icons-vue'
+import { Star, StarFilled } from '@element-plus/icons-vue'
 import { useToggle } from '@vueuse/core'
 import { useEditionStore } from '@/stores/edition'
 import { convertPage, validatePageInput } from '@/utils/converter'
@@ -194,7 +194,7 @@ function handleReset(): void {
                         class="star-icon favorite"
                         :size="14"
                       >
-                        <Star />
+                        <StarFilled />
                       </el-icon>
                     </div>
                   </el-option>
@@ -206,7 +206,7 @@ function handleReset(): void {
                   <el-button
                     class="favorite-btn"
                     :type="isCurrentFavorite ? 'warning' : 'default'"
-                    :icon="isCurrentFavorite ? Star : Star"
+                    :icon="isCurrentFavorite ? StarFilled : Star"
                     circle
                     size="default"
                     :disabled="!editionId"
@@ -301,6 +301,7 @@ function handleReset(): void {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
 }
 
 .edition-select-wrapper :deep(.el-select) {
@@ -332,6 +333,7 @@ function handleReset(): void {
 }
 
 .favorite-hint {
+  width: 100%;
   margin-top: 6px;
   font-size: 0.75rem;
   color: var(--ink-secondary);

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { Star } from '@element-plus/icons-vue'
+import { Star, StarFilled } from '@element-plus/icons-vue'
 import { useEditionStore } from '@/stores/edition'
 
 const editionStore = useEditionStore()
@@ -103,7 +103,7 @@ function handleCurrentChange(page: number): void {
                     class="star-icon favorite"
                     :size="14"
                   >
-                    <Star />
+                    <StarFilled />
                   </el-icon>
                 </div>
               </el-option>
@@ -115,7 +115,7 @@ function handleCurrentChange(page: number): void {
               <el-button
                 class="favorite-btn"
                 :type="isCurrentFavorite ? 'warning' : 'default'"
-                :icon="isCurrentFavorite ? Star : Star"
+                :icon="isCurrentFavorite ? StarFilled : Star"
                 circle
                 size="default"
                 :disabled="!editionId"
