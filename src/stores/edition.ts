@@ -110,9 +110,11 @@ export const useEditionStore = defineStore(
       inputType: PageInputType
       inputValue: string
       outputValue: string
+      remark?: string
     }): void {
       records.value.unshift({
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        remark: '',
         ...payload,
         createdAt: dayjs().format('YYYY-MM-DD HH:mm:ss'),
       })

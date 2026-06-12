@@ -249,6 +249,14 @@ const hasActiveFilters = computed(
               {{ formatConversion(row) }}
             </template>
           </el-table-column>
+          <el-table-column label="备注" min-width="120">
+            <template #default="{ row }">
+              <span v-if="row.remark" :title="row.remark" class="remark-cell">
+                {{ row.remark }}
+              </span>
+              <span v-else class="remark-placeholder">—</span>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" width="130" fixed="right">
             <template #default="{ row }">
               <el-button type="primary" link size="small" @click="handleReconvert(row)">
@@ -300,5 +308,18 @@ const hasActiveFilters = computed(
 .filter-card {
   padding: 16px 24px;
   margin-bottom: 16px;
+}
+
+.remark-cell {
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.remark-placeholder {
+  color: #c0c4cc;
 }
 </style>

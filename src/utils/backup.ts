@@ -64,13 +64,16 @@ export function parseBackupFile(text: string): MappingBackup {
     throw new Error('备份文件格式不正确，无法解析')
   }
   for (let i = 0; i < backup.records.length; i++) {
-    const rec = backup.records[i]
+    const rec = backup.records[i] as ConversionRecord
     for (const field of REQUIRED_RECORD_FIELDS) {
       if (!rec[field]) {
         throw new Error(
           `第 ${i + 1} 条记录缺少必填字段「${field}」，备份文件格式不正确`,
         )
       }
+    }
+    if (rec.remark === undefined) {
+      rec.remark = ''
     }
   }
   return backup

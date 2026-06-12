@@ -41,6 +41,7 @@ export interface ConversionRecord {
   inputType: PageInputType
   inputValue: string
   outputValue: string
+  remark: string
   createdAt: string
 }
 

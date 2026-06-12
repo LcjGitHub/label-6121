@@ -28,6 +28,10 @@ const batchPageSize = ref(10)
 
 const [saving, toggleSaving] = useToggle(false)
 
+const remarkDialogVisible = ref(false)
+const remarkInput = ref('')
+const MAX_REMARK_LENGTH = 50
+
 let isUpdatingQuery = false
 
 function resetResult(): void {
@@ -295,17 +299,30 @@ function handleConvert(): void {
 }
 
 /**
- * 保存当前对照记录
+ * 打开保存备注对话框
  */
-async function handleSave(): Promise<void> {
+function handleSave(): void {
   if (!hasResult.value) {
     ElMessage.warning('请先完成换算再保存')
     return
   }
+  remarkInput.value = ''
+  remarkDialogVisible.value = true
+}
 
+/**
+ * 确认保存对照记录（含备注）
+ */
+async function confirmSave(): Promise<void> {
   const edition = selectedEdition.value
   const volume = selectedVolume.value
   if (!edition || !volume) return
+
+  const remark = remarkInput.value.trim()
+  if (remark.length > MAX_REMARK_LENGTH) {
+    ElMessage.warning(`备注不能超过 ${MAX_REMARK_LENGTH} 字`)
+    return
+  }
 
   toggleSaving(true)
   try {
@@ -317,11 +334,17 @@ async function handleSave(): Promise<void> {
       inputType: inputType.value,
       inputValue: inputValue.value.trim(),
       outputValue: outputValue.value,
+      remark,
     })
+    remarkDialogVisible.value = false
     ElMessage.success('已保存对照记录')
   } finally {
     toggleSaving(false)
   }
+}
+
+function cancelSave(): void {
+  remarkDialogVisible.value = false
 }
 
 /**
@@ -604,6 +627,33 @@ function handleBatchCurrentChange(page: number): void {
         <RouterLink to="/mapping" class="hint-link">前往完整映射表页面 →</RouterLink>
       </p>
     </div>
+
+    <el-dialog
+      v-model="remarkDialogVisible"
+      title="保存对照记录"
+      width="420px"
+      :close-on-click-modal="false"
+      @closed="remarkInput = ''"
+    >
+      <el-form label-position="top">
+        <el-form-item label="备注（可选，不超过50字）">
+          <el-input
+            v-model="remarkInput"
+            type="textarea"
+            :rows="3"
+            :maxlength="MAX_REMARK_LENGTH"
+            show-word-limit
+            placeholder="请输入备注信息，可为空"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="cancelSave">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="confirmSave">
+          确认保存
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
