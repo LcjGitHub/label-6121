@@ -31,5 +31,8 @@ jobs:
       - name: Code Style Check
         run: npm run lint:check
 
+      - name: Unit Test
+        run: npm run test
+
       - name: Production Build
         run: npm run build
