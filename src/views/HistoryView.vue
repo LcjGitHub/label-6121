@@ -58,7 +58,7 @@ async function handleDelete(record: ConversionRecord): Promise<void> {
 }
 
 async function handleClearAll(): Promise<void> {
-  if (records.value.length === 0) return
+  if (totalRecords.value === 0) return
 
   try {
     await ElMessageBox.confirm('确定清空全部对照记录吗？此操作不可恢复。', '清空确认', {
@@ -74,7 +74,7 @@ async function handleClearAll(): Promise<void> {
 }
 
 function handleExport(): void {
-  if (records.value.length === 0) {
+  if (totalRecords.value === 0) {
     ElMessage.warning('暂无记录可导出')
     return
   }
@@ -126,44 +126,6 @@ const hasActiveFilters = computed(
 
 <template>
   <div class="page-container">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">对照记录</h1>
-        <p class="page-subtitle">
-          换算历史保存在本地浏览器，
-          <template v-if="hasActiveFilters">
-            当前筛选结果 {{ records.length }} 条，共 {{ totalRecords }} 条
-          </template>
-          <template v-else>
-            共 {{ records.length }} 条
-          </template>
-        </p>
-      </div>
-      <div class="header-actions">
-        <el-button type="primary" plain @click="handleExport">
-          导出备份
-        </el-button>
-        <el-button type="success" plain @click="triggerImportFile">
-          从文件导入
-        </el-button>
-        <el-button
-          v-if="records.length > 0"
-          type="danger"
-          plain
-          @click="handleClearAll"
-        >
-          清空全部
-        </el-button>
-        <input
-          ref="importFileRef"
-          type="file"
-          accept=".json"
-          style="display: none"
-          @change="handleImportFile"
-        />
-      </div>
-    </div>
-
     <div class="literary-card filter-card">
       <el-row :gutter="16" align="middle">
         <el-col :xs="24" :sm="8">
@@ -211,6 +173,44 @@ const hasActiveFilters = computed(
       </el-row>
     </div>
 
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">对照记录</h1>
+        <p class="page-subtitle">
+          换算历史保存在本地浏览器，
+          <template v-if="hasActiveFilters">
+            当前筛选结果 {{ records.length }} 条，共 {{ totalRecords }} 条
+          </template>
+          <template v-else>
+            共 {{ totalRecords }} 条
+          </template>
+        </p>
+      </div>
+      <div class="header-actions">
+        <el-button type="primary" plain @click="handleExport">
+          导出备份
+        </el-button>
+        <el-button type="success" plain @click="triggerImportFile">
+          从文件导入
+        </el-button>
+        <el-button
+          v-if="totalRecords > 0"
+          type="danger"
+          plain
+          @click="handleClearAll"
+        >
+          清空全部
+        </el-button>
+        <input
+          ref="importFileRef"
+          type="file"
+          accept=".json"
+          style="display: none"
+          @change="handleImportFile"
+        />
+      </div>
+    </div>
+
     <div class="literary-card">
       <template v-if="records.length > 0">
         <el-table :data="records" stripe style="width: 100%">
@@ -240,6 +240,11 @@ const hasActiveFilters = computed(
           </el-table-column>
         </el-table>
       </template>
+
+      <div v-else-if="hasActiveFilters && totalRecords > 0" class="empty-hint">
+        <p>无符合筛选条件的记录</p>
+        <el-button type="primary" link @click="handleClearFilters">清空筛选</el-button>
+      </div>
 
       <div v-else class="empty-hint">
         <p>暂无对照记录</p>
