@@ -3,11 +3,33 @@ import { computed, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
 import { useEditionStore } from '@/stores/edition'
-import type { ConversionRecord } from '@/types'
+import type { ConversionRecord, PageInputType } from '@/types'
 
 const editionStore = useEditionStore()
 
-const records = computed(() => editionStore.sortedRecords)
+const records = computed(() => editionStore.filteredRecords)
+const totalRecords = computed(() => editionStore.sortedRecords.length)
+
+const filterEditionId = computed({
+  get: () => editionStore.filterEditionId,
+  set: (val: string) => { editionStore.filterEditionId = val },
+})
+const filterInputType = computed({
+  get: () => editionStore.filterInputType,
+  set: (val: PageInputType | '') => { editionStore.filterInputType = val },
+})
+
+const editionOptions = computed(() =>
+  editionStore.getSortedEditionsWithFavorite().map((e) => ({
+    label: e.name,
+    value: e.id,
+  })),
+)
+
+const directionOptions = [
+  { label: '现代 → 古', value: 'modern' as PageInputType },
+  { label: '古 → 现代', value: 'ancient' as PageInputType },
+]
 
 const importFileRef = ref<HTMLInputElement | null>(null)
 
@@ -92,6 +114,14 @@ function formatRelativeTime(datetime: string): string {
   }
   return d.format('YYYY-MM-DD HH:mm')
 }
+
+function handleClearFilters(): void {
+  editionStore.clearFilters()
+}
+
+const hasActiveFilters = computed(
+  () => filterEditionId.value !== '' || filterInputType.value !== '',
+)
 </script>
 
 <template>
@@ -99,7 +129,15 @@ function formatRelativeTime(datetime: string): string {
     <div class="page-header">
       <div>
         <h1 class="page-title">对照记录</h1>
-        <p class="page-subtitle">换算历史保存在本地浏览器，共 {{ records.length }} 条</p>
+        <p class="page-subtitle">
+          换算历史保存在本地浏览器，
+          <template v-if="hasActiveFilters">
+            当前筛选结果 {{ records.length }} 条，共 {{ totalRecords }} 条
+          </template>
+          <template v-else>
+            共 {{ records.length }} 条
+          </template>
+        </p>
       </div>
       <div class="header-actions">
         <el-button type="primary" plain @click="handleExport">
@@ -124,6 +162,53 @@ function formatRelativeTime(datetime: string): string {
           @change="handleImportFile"
         />
       </div>
+    </div>
+
+    <div class="literary-card filter-card">
+      <el-row :gutter="16" align="middle">
+        <el-col :xs="24" :sm="8">
+          <el-select
+            v-model="filterEditionId"
+            placeholder="按版本名称筛选"
+            clearable
+            style="width: 100%"
+            size="default"
+          >
+            <el-option
+              v-for="opt in editionOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+        </el-col>
+        <el-col :xs="24" :sm="8">
+          <el-select
+            v-model="filterInputType"
+            placeholder="按换算方向筛选"
+            clearable
+            style="width: 100%"
+            size="default"
+          >
+            <el-option
+              v-for="opt in directionOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+        </el-col>
+        <el-col :xs="24" :sm="8">
+          <el-button
+            type="primary"
+            plain
+            :disabled="!hasActiveFilters"
+            @click="handleClearFilters"
+          >
+            清空筛选
+          </el-button>
+        </el-col>
+      </el-row>
     </div>
 
     <div class="literary-card">
@@ -184,5 +269,10 @@ function formatRelativeTime(datetime: string): string {
   gap: 10px;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.filter-card {
+  padding: 16px 24px;
+  margin-bottom: 16px;
 }
 </style>

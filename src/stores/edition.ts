@@ -16,6 +16,8 @@ export const useEditionStore = defineStore(
     const selectedEditionId = ref('')
     const selectedVolumeId = ref('')
     const favoriteEditionIds = ref<string[]>([])
+    const filterEditionId = ref('')
+    const filterInputType = ref<PageInputType | ''>('')
 
     const favoriteCount = computed(() => favoriteEditionIds.value.length)
 
@@ -24,6 +26,17 @@ export const useEditionStore = defineStore(
         (a, b) => dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf(),
       ),
     )
+
+    const filteredRecords = computed(() => {
+      let result = sortedRecords.value
+      if (filterEditionId.value) {
+        result = result.filter((r) => r.editionId === filterEditionId.value)
+      }
+      if (filterInputType.value) {
+        result = result.filter((r) => r.inputType === filterInputType.value)
+      }
+      return result
+    })
 
     /**
      * 根据 ID 获取版本
@@ -119,6 +132,11 @@ export const useEditionStore = defineStore(
       records.value = []
     }
 
+    function clearFilters(): void {
+      filterEditionId.value = ''
+      filterInputType.value = ''
+    }
+
     function initSelection(): void {
       if (selectedEditionId.value) return
       const firstEdition = editions.value[0]
@@ -155,6 +173,9 @@ export const useEditionStore = defineStore(
       favoriteEditionIds,
       favoriteCount,
       sortedRecords,
+      filterEditionId,
+      filterInputType,
+      filteredRecords,
       getEditionById,
       getVolumeById,
       isFavoriteEdition,
@@ -165,6 +186,7 @@ export const useEditionStore = defineStore(
       addRecord,
       removeRecord,
       clearRecords,
+      clearFilters,
       initSelection,
       syncVolumeOnEditionChange,
       exportRecords,
