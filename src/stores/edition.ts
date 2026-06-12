@@ -2,7 +2,8 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import dayjs from 'dayjs'
 import editionsData from '@/mock/editions.json'
-import type { ConversionRecord, Edition, PageInputType, Volume } from '@/types'
+import type { ConversionRecord, Edition, MappingBackup, PageInputType, Volume } from '@/types'
+import { mergeRecords, parseBackupFile, serializeBackup, triggerDownload } from '@/utils/backup'
 
 /**
  * 古籍版本与对照历史记录 Store
@@ -89,6 +90,20 @@ export const useEditionStore = defineStore(
       }
     }
 
+    function exportRecords(): void {
+      const jsonStr = serializeBackup(records.value)
+      triggerDownload(jsonStr)
+    }
+
+    function importRecords(fileContent: string): { added: number; updated: number; total: number } {
+      const backup: MappingBackup = parseBackupFile(fileContent)
+      const incomingIds = new Set(backup.records.map((r) => r.id))
+      const updatedCount = records.value.filter((r) => incomingIds.has(r.id)).length
+      const addedCount = backup.records.length - updatedCount
+      records.value = mergeRecords(records.value, backup.records)
+      return { added: addedCount, updated: updatedCount, total: records.value.length }
+    }
+
     return {
       editions,
       records,
@@ -102,6 +117,8 @@ export const useEditionStore = defineStore(
       clearRecords,
       initSelection,
       syncVolumeOnEditionChange,
+      exportRecords,
+      importRecords,
     }
   },
   {

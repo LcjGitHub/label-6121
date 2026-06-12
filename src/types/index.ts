@@ -46,3 +46,16 @@ export interface ConversionResult {
   outputValue?: string
   message?: string
 }
+
+/** 备份文件元信息 */
+export interface BackupMeta {
+  version: string
+  exportedAt: string
+  recordCount: number
+}
+
+/** 备份文件完整结构 */
+export interface MappingBackup {
+  meta: BackupMeta
+  records: ConversionRecord[]
+}
