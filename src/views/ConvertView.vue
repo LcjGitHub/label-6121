@@ -6,7 +6,7 @@ import { Star, StarFilled } from '@element-plus/icons-vue'
 import { useToggle } from '@vueuse/core'
 import { useEditionStore } from '@/stores/edition'
 import { convertPage, convertPageRange, validatePageInput, validatePageRange } from '@/utils/converter'
-import type { BatchConversionResult, ConvertMode, PageInputType, PrefillConvertData } from '@/types'
+import type { BatchConversionResult, ConvertMode, NearbySuggestion, PageInputType, PrefillConvertData } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,6 +17,7 @@ const inputType = ref<PageInputType>('modern')
 const inputValue = ref('')
 const outputValue = ref('')
 const errorMessage = ref('')
+const suggestions = ref<NearbySuggestion[]>([])
 
 const startPage = ref('')
 const endPage = ref('')
@@ -31,11 +32,13 @@ let isUpdatingQuery = false
 function resetResult(): void {
   outputValue.value = ''
   errorMessage.value = ''
+  suggestions.value = []
 }
 
 function resetBatchResult(): void {
   batchResult.value = null
   errorMessage.value = ''
+  suggestions.value = []
 }
 
 function handleModeChange(): void {
@@ -278,12 +281,14 @@ function handleConvert(): void {
   if (!result.success) {
     errorMessage.value = result.message ?? '换算失败'
     outputValue.value = ''
+    suggestions.value = result.suggestions ?? []
     ElMessage.warning(result.message ?? '换算失败')
     return
   }
 
   outputValue.value = result.outputValue ?? ''
   errorMessage.value = ''
+  suggestions.value = []
   ElMessage.success('换算成功')
 }
 
@@ -574,6 +579,15 @@ function handleBatchCurrentChange(page: number): void {
         :closable="false"
         class="error-alert"
       />
+
+      <div v-if="suggestions.length > 0" class="suggestions-box">
+        <div class="suggestions-title">邻近页码参考</div>
+        <el-table :data="suggestions" stripe size="small" class="suggestions-table">
+          <el-table-column prop="modernPage" label="现代页码" width="120" align="center" />
+          <el-table-column prop="ancientPage" label="古页码" align="center" />
+        </el-table>
+        <p class="suggestions-hint">以上为该卷册中最接近的三条对照，供参考</p>
+      </div>
     </div>
 
     <div v-if="selectedVolume" class="literary-card mapping-hint">
@@ -646,6 +660,33 @@ function handleBatchCurrentChange(page: number): void {
 
 .error-alert {
   margin-top: 20px;
+}
+
+.suggestions-box {
+  margin-top: 16px;
+  padding: 14px 18px;
+  background: #faf7f0;
+  border: 1px solid #e8e0d0;
+  border-radius: 6px;
+}
+
+.suggestions-title {
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-primary, #4a3728);
+  letter-spacing: 0.05em;
+}
+
+.suggestions-table {
+  margin-bottom: 8px;
+}
+
+.suggestions-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ink-secondary, #8b7355);
+  letter-spacing: 0.03em;
 }
 
 .mapping-hint {

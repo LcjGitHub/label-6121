@@ -52,11 +52,18 @@ export interface PrefillConvertData {
   inputValue: string
 }
 
+/** 邻近页码建议 */
+export interface NearbySuggestion {
+  modernPage: number
+  ancientPage: string
+}
+
 /** 换算结果 */
 export interface ConversionResult {
   success: boolean
   outputValue?: string
   message?: string
+  suggestions?: NearbySuggestion[]
 }
 
 /** 批量换算单条结果 */

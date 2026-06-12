@@ -2,6 +2,7 @@ import type {
   BatchConversionItem,
   BatchConversionResult,
   ConversionResult,
+  NearbySuggestion,
   PageInputType,
   PageMapping,
 } from '@/types'
@@ -47,6 +48,47 @@ export function validatePageInput(type: PageInputType, value: string): string | 
 }
 
 /**
+ * 在映射表中查找与输入最接近的三条对照建议
+ * 现代页码按数值距离排序，古页码按字典序定位后取邻近条目
+ * @param mappings - 页码映射表
+ * @param inputType - 输入类型
+ * @param inputValue - 输入值
+ */
+export function findNearbySuggestions(
+  mappings: PageMapping[],
+  inputType: PageInputType,
+  inputValue: string,
+): NearbySuggestion[] {
+  if (mappings.length === 0) return []
+
+  if (inputType === 'modern') {
+    const num = Number(inputValue.trim())
+    const sorted = [...mappings].sort(
+      (a, b) => Math.abs(a.modernPage - num) - Math.abs(b.modernPage - num),
+    )
+    return sorted.slice(0, 3).map((m) => ({
+      modernPage: m.modernPage,
+      ancientPage: m.ancientPage,
+    }))
+  }
+
+  const trimmed = inputValue.trim()
+  const sorted = [...mappings].sort((a, b) =>
+    a.ancientPage.localeCompare(b.ancientPage, 'zh-CN'),
+  )
+  let insertIdx = sorted.findIndex((m) => m.ancientPage.localeCompare(trimmed, 'zh-CN') >= 0)
+  if (insertIdx === -1) insertIdx = sorted.length
+
+  const start = Math.max(0, insertIdx - 1)
+  const end = Math.min(sorted.length, start + 3)
+  const adjustedStart = Math.max(0, end - 3)
+  return sorted.slice(adjustedStart, end).map((m) => ({
+    modernPage: m.modernPage,
+    ancientPage: m.ancientPage,
+  }))
+}
+
+/**
  * 现代页码 → 古页码
  * @param mappings - 页码映射表
  * @param modernPage - 现代页码
@@ -57,7 +99,8 @@ export function convertModernToAncient(
 ): ConversionResult {
   const found = mappings.find((m) => m.modernPage === modernPage)
   if (!found) {
-    return { success: false, message: '未找到对应古页码，请核对卷册与页码' }
+    const suggestions = findNearbySuggestions(mappings, 'modern', String(modernPage))
+    return { success: false, message: '未找到对应古页码，请核对卷册与页码', suggestions }
   }
   return { success: true, outputValue: found.ancientPage }
 }
@@ -74,7 +117,8 @@ export function convertAncientToModern(
   const trimmed = ancientPage.trim()
   const found = mappings.find((m) => m.ancientPage === trimmed)
   if (!found) {
-    return { success: false, message: '未找到对应现代页码，请核对卷册与页码' }
+    const suggestions = findNearbySuggestions(mappings, 'ancient', trimmed)
+    return { success: false, message: '未找到对应现代页码，请核对卷册与页码', suggestions }
   }
   return { success: true, outputValue: String(found.modernPage) }
 }
