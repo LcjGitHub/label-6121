@@ -1,58 +1,91 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Star, StarFilled } from '@element-plus/icons-vue'
 import { useEditionStore } from '@/stores/edition'
 
 const route = useRoute()
+const router = useRouter()
 const editionStore = useEditionStore()
 
-function initFromRouteOrStore(): void {
+const currentPage = ref(1)
+const pageSize = ref(10)
+
+let isUpdatingQuery = false
+
+function sanitizeRouteQuery(editionId: string | undefined, volumeId: string | undefined): {
+  validEdition: string | undefined
+  validVolume: string | undefined
+  needsUpdate: boolean
+} {
+  let needsUpdate = false
+
+  if (!editionId) {
+    return { validEdition: undefined, validVolume: undefined, needsUpdate }
+  }
+
+  const edition = editionStore.getEditionById(editionId)
+  if (!edition) {
+    needsUpdate = true
+    return { validEdition: undefined, validVolume: undefined, needsUpdate }
+  }
+
+  if (volumeId) {
+    const volume = editionStore.getVolumeById(editionId, volumeId)
+    if (!volume) {
+      needsUpdate = true
+      return { validEdition: editionId, validVolume: undefined, needsUpdate }
+    }
+    return { validEdition: editionId, validVolume: volumeId, needsUpdate }
+  }
+
+  return { validEdition: editionId, validVolume: undefined, needsUpdate }
+}
+
+function applyRouteQuery(): void {
+  if (isUpdatingQuery) return
+
   const queryEdition = route.query.edition as string | undefined
   const queryVolume = route.query.volume as string | undefined
 
-  if (queryEdition) {
-    const editionExists = editionStore.getEditionById(queryEdition)
-    if (editionExists) {
-      editionStore.selectedEditionId = queryEdition
-      if (queryVolume) {
-        const volumeExists = editionStore.getVolumeById(queryEdition, queryVolume)
-        if (volumeExists) {
-          editionStore.selectedVolumeId = queryVolume
-          return
-        }
-      }
+  const { validEdition, validVolume, needsUpdate } = sanitizeRouteQuery(queryEdition, queryVolume)
+
+  if (validEdition) {
+    editionStore.selectedEditionId = validEdition
+    if (validVolume) {
+      editionStore.selectedVolumeId = validVolume
+    } else {
       editionStore.syncVolumeOnEditionChange()
-      return
     }
+    currentPage.value = 1
+  } else {
+    editionStore.initSelection()
   }
 
-  editionStore.initSelection()
+  if (needsUpdate || (validEdition && !validVolume)) {
+    isUpdatingQuery = true
+    const currentEdition = validEdition ?? editionStore.selectedEditionId
+    const currentVolume = validVolume ?? editionStore.selectedVolumeId
+    router
+      .replace({
+        path: route.path,
+        query: {
+          ...(currentEdition ? { edition: currentEdition } : {}),
+          ...(currentVolume ? { volume: currentVolume } : {}),
+        },
+      })
+      .finally(() => {
+        isUpdatingQuery = false
+      })
+  }
 }
 
-initFromRouteOrStore()
+applyRouteQuery()
 
 watch(
   () => [route.query.edition, route.query.volume],
   () => {
-    const queryEdition = route.query.edition as string | undefined
-    const queryVolume = route.query.volume as string | undefined
-    if (queryEdition) {
-      const editionExists = editionStore.getEditionById(queryEdition)
-      if (editionExists) {
-        editionStore.selectedEditionId = queryEdition
-        if (queryVolume) {
-          const volumeExists = editionStore.getVolumeById(queryEdition, queryVolume)
-          if (volumeExists) {
-            editionStore.selectedVolumeId = queryVolume
-            currentPage.value = 1
-            return
-          }
-        }
-        editionStore.syncVolumeOnEditionChange()
-        currentPage.value = 1
-      }
-    }
+    applyRouteQuery()
   },
 )
 
@@ -64,8 +97,6 @@ const volumeId = computed({
   get: () => editionStore.selectedVolumeId,
   set: (val: string) => { editionStore.selectedVolumeId = val },
 })
-const currentPage = ref(1)
-const pageSize = ref(10)
 
 const editionOptions = computed(() =>
   editionStore.getSortedEditionsWithFavorite().map((e) => ({

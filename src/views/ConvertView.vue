@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Star, StarFilled } from '@element-plus/icons-vue'
 import { useToggle } from '@vueuse/core'
@@ -9,6 +9,7 @@ import { convertPage, validatePageInput } from '@/utils/converter'
 import type { PageInputType } from '@/types'
 
 const route = useRoute()
+const router = useRouter()
 const editionStore = useEditionStore()
 
 const inputType = ref<PageInputType>('modern')
@@ -18,59 +19,86 @@ const errorMessage = ref('')
 
 const [saving, toggleSaving] = useToggle(false)
 
+let isUpdatingQuery = false
+
 function resetResult(): void {
   outputValue.value = ''
   errorMessage.value = ''
 }
 
-function initFromRouteOrStore(): void {
+function sanitizeRouteQuery(editionId: string | undefined, volumeId: string | undefined): {
+  validEdition: string | undefined
+  validVolume: string | undefined
+  needsUpdate: boolean
+} {
+  let needsUpdate = false
+
+  if (!editionId) {
+    return { validEdition: undefined, validVolume: undefined, needsUpdate }
+  }
+
+  const edition = editionStore.getEditionById(editionId)
+  if (!edition) {
+    needsUpdate = true
+    return { validEdition: undefined, validVolume: undefined, needsUpdate }
+  }
+
+  if (volumeId) {
+    const volume = editionStore.getVolumeById(editionId, volumeId)
+    if (!volume) {
+      needsUpdate = true
+      return { validEdition: editionId, validVolume: undefined, needsUpdate }
+    }
+    return { validEdition: editionId, validVolume: volumeId, needsUpdate }
+  }
+
+  return { validEdition: editionId, validVolume: undefined, needsUpdate }
+}
+
+function applyRouteQuery(): void {
+  if (isUpdatingQuery) return
+
   const queryEdition = route.query.edition as string | undefined
   const queryVolume = route.query.volume as string | undefined
 
-  if (queryEdition) {
-    const editionExists = editionStore.getEditionById(queryEdition)
-    if (editionExists) {
-      editionStore.selectedEditionId = queryEdition
-      if (queryVolume) {
-        const volumeExists = editionStore.getVolumeById(queryEdition, queryVolume)
-        if (volumeExists) {
-          editionStore.selectedVolumeId = queryVolume
-          resetResult()
-          return
-        }
-      }
+  const { validEdition, validVolume, needsUpdate } = sanitizeRouteQuery(queryEdition, queryVolume)
+
+  if (validEdition) {
+    editionStore.selectedEditionId = validEdition
+    if (validVolume) {
+      editionStore.selectedVolumeId = validVolume
+    } else {
       editionStore.syncVolumeOnEditionChange()
-      resetResult()
-      return
     }
+    resetResult()
+  } else {
+    editionStore.initSelection()
   }
 
-  editionStore.initSelection()
+  if (needsUpdate || (validEdition && !validVolume)) {
+    isUpdatingQuery = true
+    const currentEdition = validEdition ?? editionStore.selectedEditionId
+    const currentVolume = validVolume ?? editionStore.selectedVolumeId
+    router
+      .replace({
+        path: route.path,
+        query: {
+          ...(currentEdition ? { edition: currentEdition } : {}),
+          ...(currentVolume ? { volume: currentVolume } : {}),
+        },
+      })
+      .finally(() => {
+        isUpdatingQuery = false
+      })
+  }
 }
 
-initFromRouteOrStore()
+applyRouteQuery()
 
 watch(
   () => [route.query.edition, route.query.volume],
   () => {
-    const queryEdition = route.query.edition as string | undefined
-    const queryVolume = route.query.volume as string | undefined
-    if (queryEdition) {
-      const editionExists = editionStore.getEditionById(queryEdition)
-      if (editionExists) {
-        editionStore.selectedEditionId = queryEdition
-        if (queryVolume) {
-          const volumeExists = editionStore.getVolumeById(queryEdition, queryVolume)
-          if (volumeExists) {
-            editionStore.selectedVolumeId = queryVolume
-            resetResult()
-            return
-          }
-        }
-        editionStore.syncVolumeOnEditionChange()
-        resetResult()
-      }
-    }
+    applyRouteQuery()
   },
 )
 

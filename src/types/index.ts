@@ -8,6 +8,7 @@ export interface PageMapping {
 export interface Volume {
   id: string
   name: string
+  description: string
   mappings: PageMapping[]
 }
 

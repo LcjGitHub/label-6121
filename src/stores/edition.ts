@@ -80,7 +80,7 @@ export const useEditionStore = defineStore(
       result.sort((a, b) => {
         if (a.isFavorite && !b.isFavorite) return -1
         if (!a.isFavorite && b.isFavorite) return 1
-        return 0
+        return a.name.localeCompare(b.name, 'zh-CN')
       })
       return result
     }

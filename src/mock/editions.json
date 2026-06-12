@@ -8,6 +8,7 @@
         {
           "id": "siku-vol-1",
           "name": "卷一·经部总序",
+          "description": "经部总论，涵盖群经大旨与学术源流",
           "mappings": [
             { "modernPage": 1, "ancientPage": "一之一" },
             { "modernPage": 2, "ancientPage": "一之二" },
@@ -26,6 +27,7 @@
         {
           "id": "siku-vol-2",
           "name": "卷二·史部提要",
+          "description": "史部诸书解题，记史籍源流与编纂体例",
           "mappings": [
             { "modernPage": 1, "ancientPage": "甲一" },
             { "modernPage": 2, "ancientPage": "甲二" },
@@ -44,6 +46,7 @@
         {
           "id": "siku-vol-3",
           "name": "卷三·子部存目",
+          "description": "子部诸家存目，录杂家、小说家、释家等",
           "mappings": [
             { "modernPage": 1, "ancientPage": "001" },
             { "modernPage": 2, "ancientPage": "002" },
@@ -69,6 +72,7 @@
         {
           "id": "dzj-vol-1",
           "name": "第一册·序跋",
+          "description": "收录各本序跋、凡例与目录，为读藏入门",
           "mappings": [
             { "modernPage": 1, "ancientPage": "序一" },
             { "modernPage": 2, "ancientPage": "序二" },
@@ -87,6 +91,7 @@
         {
           "id": "dzj-vol-2",
           "name": "第二册·正文上",
+          "description": "正文上卷，以梵夹装叶号编次，见叶数奇偶",
           "mappings": [
             { "modernPage": 1, "ancientPage": "叶一正面" },
             { "modernPage": 2, "ancientPage": "叶一背面" },
@@ -105,6 +110,7 @@
         {
           "id": "dzj-vol-3",
           "name": "第三册·正文下",
+          "description": "正文下卷，分上中下末四部分，每部分三页",
           "mappings": [
             { "modernPage": 1, "ancientPage": "上之一" },
             { "modernPage": 2, "ancientPage": "上之二" },
